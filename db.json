@@ -33,8 +33,15 @@
       "email": "milesehrlich525@gmail.com",
       "passwordHash": "$2b$10$cl8ssBhMcariCdfaIqPjR.IAAamiBF5elv9vjSV1QkTWD6o5KiKWy",
       "plan": "free",
-      "sbRunsThisMonth": 1,
-      "sbResetMonth": "2026-3"
+      "sbRunsThisMonth": 4,
+      "sbResetMonth": "2026-3",
+      "xp": 125,
+      "streak": 1,
+      "lastVisit": "",
+      "completedLessons": [
+        "f1"
+      ],
+      "passedMissions": []
     },
     {
       "id": "4f260198-ea16-4a0e-97d7-089cfb9b0a9b",

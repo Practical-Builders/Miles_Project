@@ -126,7 +126,7 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .btn-send{background:var(--text);color:var(--bg);border:none;padding:12px 28px;border-radius:40px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
 .btn-send:hover{opacity:.85}
 .char-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
-.ai-response-box{margin-top:20px;background:var(--bg2);border:1px solid var(--accent-border);border-radius:12px;padding:20px;font-size:13px;color:var(--text2);line-height:1.7;display:none}
+.ai-response-box{margin-top:20px;background:var(--bg2);border:1px solid var(--accent-border);border-radius:12px;padding:20px;font-size:16px;color:var(--text2);line-height:1.7;display:none}
 .ai-response-box.show{display:block}
 .ai-score-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)}
 .score-label{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
@@ -639,9 +639,10 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
     <h2 class="section-title">Start free.<br>Go further when ready.</h2>
     <p class="section-sub">No credit card required. Upgrade only when you want advanced content.</p>
     <div class="pricing-grid">
-      <div class="pricing-card"><div class="plan-name">Free</div><div class="plan-price">$0</div><div class="plan-desc">Perfect for exploring the basics and getting your first wins with AI.</div><div class="plan-divider"></div><ul class="plan-features"><li>Foundations tier</li><li>Core Techniques tier</li><li>20 sandbox runs/month</li><li>Community Library</li></ul><button class="btn-plan" onclick="showView('learn')">Get Started Free</button></div>
-      <div class="pricing-card featured-plan"><div class="plan-badge">Most Popular</div><div class="plan-name">Pro</div><div class="plan-price">$10 <span>/ mo</span></div><div class="plan-desc">For people serious about making AI work harder for them every day.</div><div class="plan-divider"></div><ul class="plan-features"><li>All five tiers unlocked</li><li>Unlimited sandbox runs</li><li>AI Grader &amp; Dissector</li><li>Domain Tracks</li><li>Certification badge</li></ul><button class="btn-plan primary-plan">Start Pro Trial</button></div>
-      <div class="pricing-card"><div class="plan-name">Team</div><div class="plan-price">$49 <span>/ mo</span></div><div class="plan-desc">Onboard your whole team and track collective progress across all tiers.</div><div class="plan-divider"></div><ul class="plan-features"><li>Everything in Pro</li><li>Up to 10 seats</li><li>Team dashboard</li><li>Custom prompt library</li><li>Priority support</li></ul><button class="btn-plan">Contact Sales</button></div>
+      <div class="pricing-card"><div class="plan-name">Free</div><div class="plan-price">$0</div><div class="plan-desc">Perfect for exploring the basics and getting your first wins with AI.</div><div class="plan-divider"></div><ul class="plan-features"><li>Foundations tier</li><li>Core Techniques tier</li><li>10 AI-powered sandbox runs/month</li><li>Community Library</li></ul><button class="btn-plan" onclick="showView('learn')">Get Started Free</button></div>
+      <div class="pricing-card featured-plan"><div class="plan-badge">Most Popular</div><div class="plan-name">Pro</div><div class="plan-price">$10 <span>/ mo</span></div><div class="plan-desc">For people serious about making AI work harder for them every day.</div><div class="plan-divider"></div><ul class="plan-features"><li>All five tiers unlocked</li><li>140 AI-powered sandbox <runs>
+      <month></month></li><li>AI Grader &amp; Dissector</li><li>Domain Tracks</li><li>Certification badge</li></ul><button class="btn-plan primary-plan">Start Pro Trial</button></div>
+      <div class="pricing-card"><div class="plan-name">Team</div><div class="plan-price">$79 <span>/ mo</span></div><div class="plan-desc">Onboard your whole team and track collective progress across all tiers.</div><div class="plan-divider"></div><ul class="plan-features"><li>Everything in Pro</li><li>Up to 10 seats</li><li>Team dashboard</li><li>Custom prompt library</li><li>Priority support</li></ul><button class="btn-plan">Contact Sales</button></div>
     </div>
   </section>
 
@@ -714,7 +715,7 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
             <span class="score-val" id="sbScoreVal">—</span>
           </div>
           <span class="input-label">AI Response</span>
-          <div id="sbResponseText" style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:14px"></div>
+          <div id="sbResponseText" style="font-size:16px;color:var(--text2);line-height:1.7;margin-bottom:14px"></div>
           <div class="ai-tips" id="sbTips"></div>
         </div>
       </div>
@@ -1251,20 +1252,18 @@ async function runSandbox(){
     if(score>=70)addXP(25,'Sandbox Practice');
   } catch(e) {
     if(e.code === 'not_authenticated'){openAuth('signup');return;}
-    if(e.code === 'limit_reached'){
-      document.getElementById('sbResponse').classList.add('show');
-      document.getElementById('sbResponseText').textContent='You have used all 10 free sandbox runs this month. Upgrade to Pro for unlimited access.';
-      document.getElementById('sbTips').innerHTML='<button class="btn-primary" onclick="showView(\'home\')" style="margin-top:12px">View Upgrade Options</button>';
-      if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Send to AI →';sendBtn.style.opacity='1';}
-      return;
-    }
     console.error('API error:', e);
     const score = scorePromptFallback(v);
+    const isLimit = e.code === 'limit_reached';
     const box=document.getElementById('sbResponse');box.classList.add('show');
     document.getElementById('sbBar').style.width=score+'%';
     document.getElementById('sbScoreVal').textContent=score+'/100 (offline)';
-    document.getElementById('sbResponseText').textContent='(Server unavailable — showing offline score)';
-    document.getElementById('sbTips').innerHTML=`<strong>Note</strong><div style="margin-top:4px">Could not reach the server. Make sure it is running.</div>`;
+    document.getElementById('sbResponseText').textContent= isLimit
+      ? '(Monthly AI quota used — showing offline score. Upgrade to Pro for unlimited AI-powered runs.)'
+      : '(AI unavailable — showing offline score)';
+    document.getElementById('sbTips').innerHTML= isLimit
+      ? `<strong>Offline Mode</strong><div style="margin-top:4px">Your ${FREE_LIMIT} free AI runs this month are used up. You can still practice with offline scoring!</div>`
+      : `<strong>Error</strong><div style="margin-top:4px;font-size:12px;opacity:0.8">${e.message||'Unknown error'}</div>`;
   }
   if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Send to AI →';sendBtn.style.opacity='1';}
 }
@@ -1287,9 +1286,15 @@ async function runHomeSandbox(){
     document.getElementById('homeSandboxScore').textContent='Score: '+score+' / 100';
   } catch(e) {
     if(e.code==='not_authenticated'){openAuth('signup');return;}
-    if(e.code==='limit_reached'){document.getElementById('homeLiveText').textContent='Monthly limit reached. Upgrade to Pro for unlimited runs.';if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Send Prompt →';sendBtn.style.opacity='1';}return;}
     console.error('API error:', e);
     const score = scorePromptFallback(v);
+    const isLimit = e.code === 'limit_reached';
+    const box=document.getElementById('homeLiveResponse');box.classList.add('show');
+    document.getElementById('homeLiveBar').style.width=score+'%';
+    document.getElementById('homeLiveScoreVal').textContent=score+'/100 (offline)';
+    document.getElementById('homeLiveText').textContent= isLimit
+      ? '(Monthly AI quota used — showing offline score. Upgrade to Pro for unlimited AI-powered runs.)'
+      : '(AI unavailable — showing offline score)';
     document.getElementById('homeSandboxScore').textContent='Score: '+score+' / 100 (offline)';
   }
   if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Send Prompt →';sendBtn.style.opacity='1';}

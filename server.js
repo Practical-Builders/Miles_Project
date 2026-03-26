@@ -24,7 +24,10 @@ loadEnv();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET || 'promptcraft-secret-change-me';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+function geminiUrl(model) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+}
 const FREE_RUN_LIMIT = 10;
 
 // ── Database ──────────────────────────────────────────────────────────────
@@ -142,18 +145,23 @@ app.post('/api/sandbox/run', requireAuth, async (req, res) => {
   if (!systemPrompt || !userText) return res.status(400).json({ error: 'systemPrompt and userText are required' });
 
   try {
-    const geminiRes = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: systemPrompt + '\n\n' + userText }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 8192, responseMimeType: 'application/json' }
-      })
-    });
-    if (!geminiRes.ok) throw new Error('Gemini error: ' + geminiRes.status);
-    const data = await geminiRes.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Empty Gemini response');
+    let text;
+    for (const model of GEMINI_MODELS) {
+      const geminiRes = await fetch(geminiUrl(model), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: systemPrompt + '\n\n' + userText }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: 8192, responseMimeType: 'application/json' }
+        })
+      });
+      if (geminiRes.status === 429) continue;
+      if (!geminiRes.ok) throw new Error('Gemini error: ' + geminiRes.status);
+      const data = await geminiRes.json();
+      text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) break;
+    }
+    if (!text) throw new Error('All models quota exceeded or returned empty');
 
     user.sbRunsThisMonth++;
     await db.write();
@@ -194,18 +202,23 @@ Example valid output format:
 If none of these are strongly clear, return an empty object {}.`;
 
   try {
-    const geminiRes = await fetch(GEMINI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: systemPrompt + '\n\nPrompt to dissect: ' + userText }] }],
-        generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
-      })
-    });
-    if (!geminiRes.ok) throw new Error('Gemini error: ' + geminiRes.status);
-    const data = await geminiRes.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Empty Gemini response');
+    let text;
+    for (const model of GEMINI_MODELS) {
+      const geminiRes = await fetch(geminiUrl(model), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: systemPrompt + '\n\nPrompt to dissect: ' + userText }] }],
+          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+        })
+      });
+      if (geminiRes.status === 429) continue;
+      if (!geminiRes.ok) throw new Error('Gemini error: ' + geminiRes.status);
+      const data = await geminiRes.json();
+      text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) break;
+    }
+    if (!text) throw new Error('All models quota exceeded or returned empty');
 
     let parsed;
     try {
