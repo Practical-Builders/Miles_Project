@@ -281,6 +281,28 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
 .modal-body h3{font-size:16px;font-weight:700;color:var(--text);margin:24px 0 10px}
 .example-block{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px}
 .example-block.good-ex{border-color:var(--accent-border)}
+.modal-progress{display:flex;gap:7px;align-items:center;justify-content:center;padding:16px 32px 0}
+.mprog-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);transition:background .2s,opacity .2s}
+.mprog-dot.active{background:var(--accent-text)}
+[data-theme="dark"] .mprog-dot.active{background:var(--accent)}
+.mprog-dot.done{background:var(--accent-text);opacity:.35}
+[data-theme="dark"] .mprog-dot.done{background:var(--accent)}
+/* Quiz */
+.quiz-wrap{padding:4px 0}
+.quiz-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.quiz-q{font-size:15px;font-weight:700;line-height:1.55;margin-bottom:20px;color:var(--text)}
+.quiz-options{display:flex;flex-direction:column;gap:10px}
+.quiz-opt{text-align:left;padding:13px 16px;border-radius:10px;border:1.5px solid var(--border2);background:var(--surface);font-size:14px;font-family:'Syne',sans-serif;color:var(--text);cursor:pointer;transition:border-color .15s,background .15s;width:100%}
+.quiz-opt:hover:not(:disabled){border-color:var(--accent-text);background:var(--accent-bg)}
+.quiz-opt.quiz-correct{border-color:var(--accent-text)!important;background:var(--accent-bg)!important;color:var(--accent-text)!important}
+.quiz-opt.quiz-wrong{border-color:var(--red)!important;background:var(--red-bg)!important;color:var(--red)!important}
+[data-theme="dark"] .quiz-opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-bg)}
+[data-theme="dark"] .quiz-opt.quiz-correct{border-color:var(--accent)!important;color:var(--accent)!important}
+/* Apply Challenge */
+.apply-challenge-wrap{padding:4px 0}
+.apply-challenge-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--orange);margin-bottom:12px}
+.apply-score-bar{height:6px;border-radius:3px;background:var(--border);margin:12px 0 4px;overflow:hidden}
+.apply-score-fill{height:100%;border-radius:3px;background:var(--accent-text);transition:width .5s ease}
 .modal-footer{padding:20px 32px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .xp-reward{font-size:13px;font-weight:700;color:var(--accent-text)}
 [data-theme="dark"] .xp-reward{color:var(--accent)}
@@ -297,13 +319,17 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
 [data-theme="dark"] .tmpl-pill:hover{border-color:var(--accent);color:var(--accent)}
 /* Mission view */
 .missions-section{padding:60px 48px 80px;max-width:960px;margin:0 auto}
-.mission-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:12px;transition:all .2s;cursor:pointer}
-.mission-card:hover{border-color:var(--border2);transform:translateX(4px)}
+.mission-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:12px;transition:all .2s}
 .mission-card.active-mission{border-color:var(--orange);background:var(--orange-bg)}
 [data-theme="dark"] .mission-card.active-mission{border-color:var(--orange)}
 .mission-card.done-mission{border-left:3px solid var(--accent-text);opacity:.7}
 [data-theme="dark"] .mission-card.done-mission{border-left-color:var(--accent)}
-.mission-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mission-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer;user-select:none}
+.mission-top:hover .mission-title{color:var(--accent-text)}
+[data-theme="dark"] .mission-top:hover .mission-title{color:var(--accent)}
+.mission-chevron{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--bg2);color:var(--muted);font-size:12px;flex-shrink:0;transition:transform .2s,background .15s;margin-left:10px}
+.mission-card.expanded .mission-chevron{transform:rotate(180deg)}
+.mission-top:hover .mission-chevron{background:var(--border2)}
 .mission-title{font-size:15px;font-weight:700;color:var(--text)}
 .mission-xp{font-size:11px;font-weight:700;color:var(--orange);background:var(--orange-bg);padding:3px 10px;border-radius:20px}
 .mission-desc{font-size:13px;color:var(--text2);line-height:1.6}
@@ -423,6 +449,39 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
 .plan-toggle select:focus{border-color:var(--accent-text)}
 .btn-offline{background:var(--bg2);color:var(--text2);border:1px solid var(--border2);padding:10px 20px;border-radius:40px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
 .btn-offline:hover{border-color:var(--text);color:var(--text)}
+/* Sandbox mode pill (matches nav style) */
+.sb-mode-pill{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:40px;padding:4px}
+.sb-mode-tab{padding:8px 22px;border-radius:40px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;border:none;background:transparent;font-family:'Syne',sans-serif;transition:all .15s;white-space:nowrap}
+.sb-mode-tab:hover{color:var(--text)}
+.sb-mode-tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+/* Fillable template block */
+.template-block{margin-top:18px;background:var(--bg);border:1px solid var(--border2);border-radius:12px;overflow:hidden}
+.template-block-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.template-block-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.template-text{font-family:'DM Mono',monospace;font-size:13px;color:var(--text);line-height:1.7;padding:14px 16px;white-space:pre-wrap;word-break:break-word}
+.template-blank{color:var(--purple);font-weight:500}
+/* Publish button */
+.btn-publish{display:inline-flex;align-items:center;gap:7px;margin-top:14px;padding:10px 20px;border-radius:40px;border:1px solid var(--accent-border);background:var(--accent-bg);color:var(--accent-text);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-publish:hover{background:var(--accent-text);color:var(--bg)}
+[data-theme="dark"] .btn-publish{color:var(--accent);border-color:var(--accent-border)}
+[data-theme="dark"] .btn-publish:hover{background:var(--accent);color:#0D0D0F}
+.btn-publish:disabled{opacity:.5;cursor:not-allowed}
+.publish-form{margin-top:14px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;display:none}
+.publish-form.open{display:block}
+.pub-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.pub-input{flex:1;min-width:140px;padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border .15s}
+.pub-input:focus{border-color:var(--accent-border)}
+.pub-select{padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;cursor:pointer}
+.pub-error{font-size:12px;color:var(--red);min-height:18px;margin-bottom:6px}
+/* Offline breakdown */
+.offline-breakdown{margin-top:18px}
+.ob-row{display:grid;grid-template-columns:90px 1fr 52px;align-items:center;gap:10px;margin-bottom:10px}
+.ob-label{font-size:11px;font-weight:700;color:var(--text2)}
+.ob-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.ob-fill{height:100%;border-radius:3px;background:var(--accent-text);transition:width .5s ease}
+[data-theme="dark"] .ob-fill{background:var(--accent)}
+.ob-fill.zero{background:var(--border2)}
+.ob-pts{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:right}
 /* Sandbox gate */
 .sandbox-gate{text-align:center;padding:60px 24px}
 .sandbox-gate h3{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text);margin-bottom:12px}
@@ -711,10 +770,13 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
         <div class="template-row" id="templateRow"></div>
         <span class="input-label">Your Prompt</span>
         <textarea class="prompt-input" id="sbInput" rows="6" placeholder="Write your prompt here. Be specific: include a role, context, format, and constraints for best results…" oninput="updateCharCount('sbCount',this.value)"></textarea>
-        <div class="live-actions">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:14px">
           <span class="char-count" id="sbCount">0 chars</span>
-          <button class="btn-offline" onclick="runSandboxOffline()">Offline Score</button>
-          <button class="btn-send" onclick="runSandbox()">Send to AI →</button>
+          <div class="sb-mode-pill">
+            <button class="sb-mode-tab active" id="sbOfflineTab" onclick="setSbMode('offline')">Offline Score</button>
+            <button class="sb-mode-tab" id="sbAiTab" onclick="setSbMode('ai')">AI Feedback</button>
+          </div>
+          <button class="btn-send" id="sbSendBtn" onclick="dispatchSandbox()">Analyze Offline →</button>
         </div>
         <div class="ai-response-box" id="sbResponse">
           <div class="ai-score-bar">
@@ -722,9 +784,9 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
             <div class="score-track"><div class="score-fill" id="sbBar" style="width:0%"></div></div>
             <span class="score-val" id="sbScoreVal">—</span>
           </div>
-          <span class="input-label">AI Response</span>
-          <div id="sbResponseText" style="font-size:16px;color:var(--text2);line-height:1.7;margin-bottom:14px"></div>
+          <div id="sbResponseText" style="margin-bottom:14px"></div>
           <div class="ai-tips" id="sbTips"></div>
+          <div id="sbPublishArea"></div>
         </div>
       </div>
     </div>
@@ -765,10 +827,14 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
       <div class="modal-title" id="modalTitle"></div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
+    <div class="modal-progress" id="modalProgress"></div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer">
       <span class="xp-reward" id="modalXP"></span>
-      <button class="btn-primary" id="modalCompleteBtn" onclick="completeLesson()">Complete Lesson →</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" id="modalBackBtn" onclick="lessonPageBack()" style="display:none">← Back</button>
+        <button class="btn-primary" id="modalCompleteBtn" onclick="lessonPageNext()">Next →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -778,6 +844,12 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
 const state = JSON.parse(localStorage.getItem('pc_state') || '{"xp":0,"streak":1,"completedLessons":[],"passedMissions":[],"sbRuns":0,"lastVisit":""}');
 function save(){localStorage.setItem('pc_state',JSON.stringify(state))}
 let currentLesson=null;
+let currentLessonPage=0;
+let lessonPhase='reading'; // 'reading' | 'quiz' | 'apply'
+let currentQuizQuestion=0;
+let _sbTemplate='';
+let _sbPromptText='';
+let _sbPromptScore=0;
 
 // ── Auth state ───────────────────────────────────────────
 let authUser = null;
@@ -934,6 +1006,38 @@ async function callAPI(systemPrompt, userText){
   return data.result;
 }
 
+// Evaluate a prompt — feedback/coaching only, no AI output generated
+async function evaluatePromptFeedback(prompt) {
+  const system = `You are an expert AI prompt coach. A user submitted a prompt for evaluation.
+DO NOT generate a response to the prompt. Only evaluate its quality and provide coaching.
+
+Score it on this rubric:
+- Role (0-15 pts): Does it assign a clear, meaningful role? (e.g. "You are a senior copywriter")
+- Format (0-10 pts): Does it specify output format? (list, table, JSON, markdown, etc.)
+- Tone (0-8 pts): Does it direct the tone or style?
+- Constraint (0-7 pts): Are there specific, sensible constraints?
+- Context (0-5 pts): Does it give useful background or audience info?
+- Clarity (0-15 pts): Is the intent clear and coherent? (gibberish or spam = 0)
+- Specificity (0-20 pts): How specific and actionable is the request?
+Base: 20 pts.
+
+Write 2-4 specific, actionable improvement tips as plain sentences. No asterisks, no markdown.
+
+Also write a "template" — a rewritten version of the user's prompt with [BLANK] placeholders for any missing or weak components. Keep what is already good in their prompt. Add placeholders like [YOUR ROLE], [TARGET AUDIENCE], [OUTPUT FORMAT], [TONE], [WORD LIMIT] only for components that are missing or vague. The template should feel like a natural, complete prompt they can copy and fill in — not just a generic scaffold. No extra explanation, just the prompt text itself.
+
+Return ONLY valid JSON, no markdown wrapper:
+{
+  "score": <integer 0-100>,
+  "breakdown": {"role":<int>,"format":<int>,"tone":<int>,"constraint":<int>,"context":<int>,"clarity":<int>,"specificity":<int>},
+  "tips": ["<plain text tip 1>", "<plain text tip 2>", "<plain text tip 3>"],
+  "template": "<the fillable prompt template as a single plain text string>"
+}`;
+  const raw = await callAPI(system, 'Prompt to evaluate: ' + prompt);
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) return JSON.parse(raw);
+  return JSON.parse(match[0]);
+}
+
 // Evaluate a prompt using the rubric + Gemini intelligence
 async function evaluatePrompt(prompt) {
   const system = `You are an expert AI prompt coaching system. A user has submitted a prompt for evaluation.
@@ -976,31 +1080,91 @@ async function evaluateMission(missionDesc, constraint, aiResponse) {
 
 // ── Data ───────────────────────────────────────────────
 const TIERS=[
-  {id:1,name:'Foundations',icon:'',unlocked:true,color:'accent',lessons:[
-    {id:'f1',title:'What Is a Prompt?',xp:50,time:'5 min',body:`<p>A <strong>prompt</strong> is any instruction, question, or context you give to an AI model. The quality of what you get back is almost entirely determined by what you put in.</p><h3>The Golden Rule</h3><p>AI models are not mind-readers. They interpret your words literally. Ambiguity leads to generic, unhelpful output.</p><h3>Bad vs Good</h3><div class="example-block">Tell me about dogs.</div><div class="example-block good-ex">Give me 5 fascinating, lesser-known facts about border collies specifically — the kind I could use to impress someone at a dinner party. Keep each fact to 2 sentences.</div><p>Notice: the second prompt specifies a topic, quantity, audience, use case, and format constraint. That's the difference.</p>`},
-    {id:'f2',title:'How AI Models Think',xp:75,time:'8 min',body:`<p>Large language models predict likely next tokens based on everything in their context window. They don't "understand" language — they model probability distributions over text.</p><h3>What This Means for You</h3><p>The model will produce statistically plausible output. Give it strong signals about what "plausible" should mean: role, domain, tone, format.</p><h3>Context is King</h3><div class="example-block good-ex">You are a pediatric doctor explaining a diagnosis to a worried parent. Use simple language, avoid jargon, and be reassuring but honest.</div><p>This context immediately shifts the probability space toward the output you want.</p>`},
-    {id:'f3',title:'Why Word Choice Matters',xp:60,time:'6 min',body:`<p>Synonyms carry different connotations. "Summarize," "distill," "simplify," and "outline" all mean different things. So do "explain," "analyze," "critique," and "evaluate."</p><h3>Precision Verbs</h3><p>Choose your action verb carefully. "List" gives bullets. "Explain" gives prose. "Compare" gives contrast. "Argue" gives persuasion.</p><div class="example-block">Explain social media.</div><div class="example-block good-ex">Compare the psychological mechanisms behind Instagram and TikTok engagement — specifically why TikTok tends to create stronger habitual use. Cite behavioral psychology concepts.</div>`},
-    {id:'f4',title:'Length & Format Control',xp:65,time:'7 min',body:`<p>AI will match your implied format. Ask generally, get general output. Specify length, structure, and format — get exactly what you need.</p><h3>Format Signals</h3><p>Include phrases like: "in a numbered list," "as a table," "in three paragraphs," "in under 100 words," "using markdown headers." These dramatically shape output.</p><div class="example-block good-ex">Create a comparison table with 4 columns: Tool, Best For, Price, Limitations. Include 5 popular project management tools.</div>`}
+  {id:1,name:'Foundations',icon:'',color:'accent',lessons:[
+    {id:'f1',title:'What Is a Prompt?',xp:50,time:'5 min',quiz:[{q:"Which of these is the most well-structured prompt?",options:["Tell me about dogs.","Give me 5 fascinating, lesser-known facts about border collies — the kind I could use at a dinner party. Keep each to 2 sentences.","What are some facts about animals?","Write something about pets."],answer:1}],pages:[
+      `<p>A <strong>prompt</strong> is any instruction, question, or context you give to an AI model. Think of it as the brief you hand a contractor — the more precise your brief, the better the work you get back.</p><p>Most people treat AI like a search engine: type a few words, hope for the best. That's the wrong mental model. AI responds to <em>instructions</em>, not queries.</p><h3>The Golden Rule</h3><p>AI models are not mind-readers. They interpret your words literally. Ambiguity leads to generic, unhelpful output. Precision leads to results you can actually use.</p>`,
+      `<h3>See the Difference</h3><p>Here's the same request written two ways. The gap in output quality is enormous.</p><div class="example-block">Tell me about dogs.</div><div class="example-block good-ex">Give me 5 fascinating, lesser-known facts about border collies specifically — the kind I could use to impress someone at a dinner party. Keep each fact to 2 sentences.</div><p>The weak prompt is vague on topic, quantity, audience, and format. The strong one specifies all four. That specificity is the entire skill of prompting.</p>`,
+      `<h3>The Prompt Checklist</h3><p>Before sending any prompt, ask yourself:</p><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li><strong>What exactly do I want?</strong> Be specific about the task.</li><li><strong>Who should the AI be?</strong> Give it a role or persona.</li><li><strong>What format do I need?</strong> List, paragraph, table, JSON?</li><li><strong>What are the constraints?</strong> Word count, tone, things to avoid.</li><li><strong>What context does it need?</strong> Background the AI can't guess.</li></ul><p>You don't need all five every time — but asking these questions will immediately make your prompts stronger. Next up: understanding <em>why</em> these things matter at the model level.</p>`
+    ]},
+    {id:'f2',title:'How AI Models Think',xp:75,time:'8 min',quiz:[{q:"Why do specific prompts consistently outperform vague ones with AI models?",options:["The AI prefers longer text inputs","Specific prompts narrow the model's output space, making the right answer statistically most likely","Vague prompts confuse the AI's memory systems","Specific prompts use more tokens, which improves accuracy"],answer:1}],pages:[
+      `<p>To write better prompts, it helps to understand what's actually happening inside a large language model when you send it a message.</p><h3>Prediction Machines</h3><p>LLMs don't "understand" language the way humans do. They predict the most statistically likely next word (token) given everything that came before it. They've been trained on vast amounts of text, so they've internalized patterns of language, facts, reasoning styles, and tone.</p><p>This means: <strong>the model will produce whatever output is most plausible given your input.</strong> Your job is to make the "right" output the most plausible one.</p>`,
+      `<h3>What This Means for Your Prompts</h3><p>Every word you write shifts the probability distribution of what comes next. A vague prompt leaves too many equally plausible outputs — so the model picks a generic middle ground. A precise prompt narrows the space down to exactly what you want.</p><p>Think of it like setting a stage before an actor performs. The more detailed your stage dressing — role, context, tone, constraints — the more likely the performance matches your vision.</p><h3>Strong Context Signal</h3><div class="example-block good-ex">You are a pediatric doctor explaining a diagnosis to a worried parent. Use simple language, avoid jargon, and be reassuring but honest.</div><p>This single line shifts the model's entire output space: vocabulary, tone, structure, and emotional register all change instantly.</p>`,
+      `<h3>The Practical Takeaway</h3><p>You're not "telling" the AI what to do — you're setting up conditions that make the right output statistically likely. That reframe changes how you write prompts.</p><p>Instead of: <em>"Write me a summary."</em><br>Think: <em>"What context, role, and constraints make a great summary the most probable output?"</em></p><p>From this point forward in the course, every technique you learn is really just a way to more precisely shape that probability space. Role assignment, context, tone, format — all of it is about steering the model toward exactly what you need.</p>`
+    ]},
+    {id:'f3',title:'Why Word Choice Matters',xp:60,time:'6 min',quiz:[{q:"You want the AI to find weaknesses in your business plan. Which verb gets the most useful response?",options:["Explain my business plan","Summarize my business plan","Critique my business plan","Describe my business plan"],answer:2}],pages:[
+      `<p>Words that seem synonymous often produce very different outputs. This is one of the most underappreciated aspects of prompting — and one of the easiest to improve.</p><h3>Precision Verbs</h3><p>Your action verb is the single most important word in many prompts. Each one triggers a different mode of output:</p><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li><strong>List</strong> → bullet points, no explanation</li><li><strong>Explain</strong> → prose, cause and effect</li><li><strong>Compare</strong> → contrast structure, side-by-side</li><li><strong>Argue</strong> → persuasive, one-sided</li><li><strong>Critique</strong> → identifies flaws and weaknesses</li><li><strong>Summarize</strong> → condensed, key points only</li><li><strong>Analyze</strong> → breaks down components, examines relationships</li></ul>`,
+      `<h3>The Same Topic, Different Verbs</h3><p>Watch how dramatically the expected output changes with just one word swap:</p><div class="example-block">Explain social media.</div><div class="example-block good-ex">Compare the psychological mechanisms behind Instagram and TikTok engagement — specifically why TikTok tends to create stronger habitual use. Cite behavioral psychology concepts.</div><p>The first gives you a general explainer. The second forces a structured comparison with domain-specific depth. Same topic — entirely different outputs.</p><p>Before your next prompt, pick your verb deliberately. Then ask: is that actually the output shape I want? Often, swapping one word is all it takes to go from mediocre to excellent output.</p>`
+    ]},
+    {id:'f4',title:'Length & Format Control',xp:65,time:'7 min',quiz:[{q:"You need a clean, copy-pasteable comparison of 5 project management tools. What's the best format instruction?",options:["Give me a detailed response","Write a lot about each tool","Format as a markdown table with columns: Tool, Best For, Price, Limitations. No prose above or below.","Make it comprehensive"],answer:2}],applyChallenge:{instructions:"Write a prompt that explicitly specifies an output format — like a numbered list, table, or JSON — for any topic you choose.",evalSystemPrompt:`You are a prompt engineering instructor. Evaluate if the following user prompt explicitly specifies an output format (e.g. numbered list, bullet points, markdown table, JSON, CSV, or similar). The format instruction must be clearly stated — not just implied. Reply ONLY with valid JSON, no extra text: {"pass": true/false, "reason": "one sentence"}`,failHint:"Not quite — make sure your prompt explicitly states the format you want, like 'as a numbered list' or 'as a markdown table with columns X, Y, Z'."},pages:[
+      `<p>AI will match your implied format. Ask vaguely, get vague output. Specify length, structure, and format — get exactly what you need, ready to use.</p><h3>Format Signal Phrases</h3><p>Drop these into any prompt to control output shape:</p><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li>"in a numbered list"</li><li>"as a markdown table with columns: X, Y, Z"</li><li>"in exactly three paragraphs"</li><li>"in under 100 words"</li><li>"using H2 headers for each section"</li><li>"as a JSON array"</li><li>"as a CSV"</li><li>"as a timeline"</li></ul><p>You can combine multiple format signals in one prompt. The model handles them gracefully as long as they don't contradict each other.</p>`,
+      `<h3>Format in Action</h3><p>Here's a prompt that uses format control to get immediately usable output:</p><div class="example-block good-ex">Create a comparison table with 4 columns: Tool, Best For, Price, Limitations. Include 5 popular project management tools. No prose above or below the table.</div><p>Without the format instruction, you'd get a mix of paragraphs and maybe a table. With it, you get a clean, copy-pasteable table every time.</p><h3>Practice Tip</h3><p>Take any prompt you've written recently and add one explicit format instruction. Notice how much more usable the output becomes. Format control is the easiest high-leverage improvement most people never bother to make.</p>`
+    ]}
   ]},
-  {id:2,name:'Core Techniques',icon:'',unlocked:true,color:'accent',lessons:[
-    {id:'c1',title:'Role Assignment',xp:80,time:'8 min',body:`<p>One of the most powerful prompting techniques: tell the AI what persona or expert role to adopt. This shifts the model's "prior" toward domain-appropriate language, knowledge, and reasoning style.</p><h3>Role Assignment Formula</h3><div class="example-block good-ex">You are a senior UX designer with 10 years of experience at top tech companies. You are reviewing a mobile app wireframe. Be direct, identify the top 3 usability issues, and suggest specific solutions.</div><p>The role (senior UX designer), experience (10 years), context (reviewing wireframe), and task (identify and suggest) all combine to produce expert-quality output.</p>`},
-    {id:'c2',title:'Context Setting',xp:85,time:'9 min',body:`<p>Context is the background information the model needs to give you a relevant, precise answer. Never assume the AI knows your situation.</p><h3>What to Include</h3><p>Background on your situation, your audience, the purpose of the output, any constraints, and what you've already tried.</p><div class="example-block good-ex">I'm a first-time founder writing a cold email to a VC who invests in B2B SaaS. My startup does automated compliance reporting for healthcare companies. We have 3 paying customers and $18K MRR. The email should be under 150 words and end with a soft ask for a 20-minute call.</div>`},
-    {id:'c3',title:'Tone Direction',xp:70,time:'7 min',body:`<p>Tone profoundly affects how output is received. Without direction, AI defaults to a generic "assistant" tone — polite but often flat.</p><h3>Tone Vocabulary</h3><p>Professional, casual, witty, direct, empathetic, urgent, celebratory, skeptical, authoritative, conversational, technical, accessible, Hemingway-esque...</p><div class="example-block good-ex">Rewrite this product description in a tone that's confident, slightly edgy, and speaks to ambitious 25-35 year olds who dislike corporate speak. No fluff. Every word should earn its place.</div>`},
-    {id:'c4',title:'Output Format Control',xp:75,time:'8 min',body:`<p>Explicitly specifying your desired output format saves editing time and produces immediately usable content.</p><h3>Common Format Instructions</h3><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2"><li>Use markdown with H2 headers and bullet points</li><li>Return only a JSON object with keys: name, price, description</li><li>Format as a 3-act structure with clear scene breaks</li><li>Produce a CSV with columns: Date, Event, Impact</li></ul><div class="example-block good-ex">Generate the output as a JSON array. Each item should have: "title" (string), "difficulty" (easy/medium/hard), "estimated_minutes" (integer), "category" (string). Return only the JSON, no explanation.</div>`}
+  {id:2,name:'Core Techniques',icon:'',color:'accent',lessons:[
+    {id:'c1',title:'Role Assignment',xp:80,time:'8 min',quiz:[{q:"Which prompt best uses role assignment to improve output quality?",options:["Review my wireframe and find issues","As an expert, look at my wireframe","You are a senior UX designer with 10 years at top tech companies. Review this wireframe. Identify the top 3 usability issues and suggest specific fixes.","Pretend you know about design and check my wireframe"],answer:2}],pages:[
+      `<p>Role assignment is one of the highest-leverage prompting techniques. By telling the AI what expert persona to adopt, you shift its entire output register — vocabulary, reasoning style, depth of knowledge, and tone all change to match the role.</p><h3>Why It Works</h3><p>The model has been trained on text written by experts in every field. When you assign a role, you're essentially telling it which subset of that knowledge to draw from. "You are a senior tax attorney" produces a fundamentally different response than "You are a friendly assistant" — even for the exact same question.</p>`,
+      `<h3>The Role Assignment Formula</h3><p>A strong role assignment includes three components: <strong>who</strong> the AI is, <strong>what experience or context</strong> it has, and <strong>how</strong> it should behave.</p><div class="example-block good-ex">You are a senior UX designer with 10 years of experience at top tech companies. You are reviewing a mobile app wireframe. Be direct, identify the top 3 usability issues, and suggest specific solutions.</div><p>Break that down: <em>who</em> (senior UX designer), <em>experience</em> (10 years at top companies), <em>context</em> (reviewing wireframe), <em>behavior</em> (be direct, identify 3 issues, suggest solutions).</p>`,
+      `<h3>Role Assignment in Practice</h3><p>You can go further by specifying the role's <em>stance</em> or <em>disposition</em>:</p><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li>"…who is famously skeptical of conventional wisdom"</li><li>"…who writes for a non-technical audience"</li><li>"…who prioritizes speed over perfection"</li><li>"…who has seen this kind of project fail before"</li></ul><p>These additions make the role richer and the output more distinctive. Combine role assignment with context (next lesson) and you'll produce expert-quality output on almost any topic.</p>`
+    ]},
+    {id:'c2',title:'Context Setting',xp:85,time:'9 min',quiz:[{q:"A user writes: 'Write a cold email.' What's the most important missing context?",options:["The length of the email","Who is sending it, who it's going to, and what the purpose is","Whether to use formal or casual language","How many paragraphs to include"],answer:1}],pages:[
+      `<p>Context is the background information the model needs to give you a relevant, precise answer. Without it, the model fills in the gaps with generic assumptions — and generic assumptions lead to generic output.</p><h3>Never Assume the AI Knows Your Situation</h3><p>The model has no memory between conversations. It doesn't know who you are, what you're working on, who your audience is, or what you've already tried. Every conversation starts from zero. That means <strong>you</strong> have to provide the situational context every single time.</p><p>The good news: context is cheap to write and enormously valuable. A few sentences of background can transform a mediocre response into a precisely targeted one.</p>`,
+      `<h3>What Context to Include</h3><p>Ask yourself: <em>what would I tell a smart colleague who had never heard of this project before?</em> That's your context. Typically it includes:</p><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li>Your situation or role</li><li>Your audience and their knowledge level</li><li>The purpose of the output</li><li>Relevant constraints or prior attempts</li></ul><div class="example-block good-ex">I'm a first-time founder writing a cold email to a VC who invests in B2B SaaS. My startup does automated compliance reporting for healthcare companies. We have 3 paying customers and $18K MRR. The email should be under 150 words and end with a soft ask for a 20-minute call.</div><p>Every sentence in that context does work. Remove any one of them and the output gets noticeably worse.</p>`
+    ]},
+    {id:'c3',title:'Tone Direction',xp:70,time:'7 min',quiz:[{q:"You want to rewrite a product description for ambitious 25-35 year olds who distrust corporate marketing. What's the best tone instruction?",options:["Make it sound professional and friendly","Keep it positive and optimistic","Confident, slightly edgy, no corporate speak. Every word should earn its place.","Use formal business language"],answer:2}],pages:[
+      `<p>Without tone direction, AI defaults to a generic "helpful assistant" voice — polite, balanced, and often flat. That's fine for answering questions. It's terrible for writing that needs to actually land with a reader.</p><h3>Your Tone Vocabulary</h3><p>The more specific your tone instruction, the more distinctive the output. Go beyond "professional" — try:</p><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li><strong>Authoritative but approachable</strong> — expert without being intimidating</li><li><strong>Direct, no hedging</strong> — no "perhaps" or "it could be argued"</li><li><strong>Conversational, like a smart friend</strong> — informal but not sloppy</li><li><strong>Urgent and energizing</strong> — makes the reader feel action is needed now</li><li><strong>Skeptical</strong> — questions assumptions, steelmans counterarguments</li><li><strong>Hemingway-esque</strong> — short sentences, concrete nouns, no adverbs</li></ul>`,
+      `<h3>Tone in Action</h3><p>Here's the same task with two different tone directions. Notice how much the feel changes:</p><div class="example-block">Rewrite this product description to sound better.</div><div class="example-block good-ex">Rewrite this product description in a tone that's confident, slightly edgy, and speaks to ambitious 25-35 year olds who dislike corporate speak. No fluff. Every word should earn its place.</div><p>The second version gives the model a specific emotional register, a target audience, and a standard to hold each word to. That's the difference between editing that feels aimless and editing that has a clear destination.</p><p>A quick tip: name a publication or writer whose tone you want to match. "Write this in the style of a Paul Graham essay" or "like a Wired feature" gives the model a very precise tonal target.</p>`
+    ]},
+    {id:'c4',title:'Output Format Control',xp:75,time:'8 min',quiz:[{q:"You need AI output your code will parse directly. What's the most critical format instruction?",options:["Make it well-organized","Use bullet points","Return only a JSON array with keys: id, name, price. No explanation or markdown wrapper.","Format it nicely"],answer:2}],applyChallenge:{instructions:"Write a prompt that combines role assignment AND explicit output format instructions. Both must be clearly present.",evalSystemPrompt:`You are a prompt engineering instructor. Evaluate if the following prompt contains BOTH: (1) a clear role assignment (e.g. "You are a senior...") AND (2) an explicit output format instruction (e.g. JSON, table, bullet list, specific structure). Both elements must be clearly present. Reply ONLY with valid JSON, no extra text: {"pass": true/false, "reason": "one sentence"}`,failHint:"Not quite — your prompt needs both a role ('You are a...') and an explicit format instruction like 'as a markdown table' or 'return only JSON'."},pages:[
+      `<p>Specifying your output format explicitly does two things: it saves you editing time, and it produces output you can use immediately without reformatting.</p><h3>Common Format Instructions</h3><p>These phrases reliably shape output structure:</p><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li>"Use markdown with H2 headers and bullet points"</li><li>"Return only a JSON object with keys: name, price, description"</li><li>"Format as a 3-act structure with clear scene breaks"</li><li>"Produce a CSV with columns: Date, Event, Impact"</li><li>"Give me exactly 5 items, no more"</li><li>"One sentence per point"</li><li>"No preamble — start directly with the output"</li></ul>`,
+      `<h3>Structured Output Example</h3><p>When you need machine-readable output or perfectly consistent structure, be explicit about the schema:</p><div class="example-block good-ex">Generate the output as a JSON array. Each item should have: "title" (string), "difficulty" (easy/medium/hard), "estimated_minutes" (integer), "category" (string). Return only the JSON, no explanation or markdown wrapper.</div><p>This prompt produces output you can drop directly into code. Without those format instructions, you'd get prose mixed with JSON, markdown code fences, extra commentary — all of which you'd have to clean up manually.</p><p>The golden rule: if you already know the format you want, specify it. Never leave format to chance when it costs you nothing to be explicit.</p>`
+    ]}
   ]},
-  {id:3,name:'Advanced Patterns',icon:'',unlocked:false,color:'purple',lessons:[
-    {id:'a1',title:'Chain-of-Thought Prompting',xp:120,time:'12 min',body:`<p>Chain-of-thought (CoT) prompting asks the model to reason step-by-step before giving a final answer. This dramatically improves accuracy on complex reasoning tasks.</p><h3>How to Trigger It</h3><div class="example-block good-ex">Think through this step by step before giving your final answer: A store sells apples for $0.50 each and oranges for $0.75 each. Alice bought 12 pieces of fruit for $7.50. How many of each did she buy?</div><p>Adding "think step by step" or "reason through this" activates longer, more reliable reasoning chains.</p>`},
-    {id:'a2',title:'Few-Shot Examples',xp:130,time:'14 min',body:`<p>Few-shot prompting provides 2-5 examples of input → output pairs before your actual request. This is one of the highest-leverage techniques for consistent, styled output.</p><h3>Template</h3><div class="example-block good-ex">I'll show you examples, then give you a new input.\n\nInput: "The meeting ran long"\nOutput: "Team sync exceeded scheduled duration"\n\nInput: "Our app crashed"\nOutput: "Application experienced an unexpected service interruption"\n\nInput: "John is bad at Excel"\nOutput:</div><p>The model extracts the pattern and applies it to new inputs.</p>`},
-    {id:'a3',title:'Iterative Refinement',xp:110,time:'11 min',body:`<p>The best prompts are rarely written once. Iterative refinement is a process: generate, evaluate, identify weaknesses, refine, repeat.</p><h3>The Refinement Loop</h3><p>1. Draft a prompt → Get output → 2. Identify what's wrong or missing → 3. Add those signals to the prompt → 4. Repeat until output is excellent.</p><div class="example-block good-ex">The previous output was too formal and used too many bullet points. I need this to read as a natural, flowing blog post written in first person. Rewrite it with those changes, keeping the same core content.</div>`}
+  {id:3,name:'Advanced Patterns',icon:'',color:'purple',lessons:[
+    {id:'a1',title:'Chain-of-Thought Prompting',xp:120,time:'12 min',quiz:[{q:"Which phrase most effectively triggers chain-of-thought reasoning in a complex problem?",options:["Give me a quick answer","Think through this step by step before giving your final answer","Be thorough in your response","Explain your answer"],answer:1}],applyChallenge:{instructions:"Write a prompt that asks the AI to reason step-by-step before giving its final answer. The prompt should involve a decision, analysis, or multi-step problem.",evalSystemPrompt:`You are a prompt engineering instructor. Evaluate if the following prompt explicitly asks the AI to think or reason step-by-step before answering. Look for chain-of-thought trigger phrases like "step by step", "think through", "reason through", "work through this", "consider each factor then", or similar deliberate reasoning instructions. A prompt that just asks a question without a reasoning instruction does NOT pass. Reply ONLY with valid JSON, no extra text: {"pass": true/false, "reason": "one sentence"}`,failHint:"Not quite — add a chain-of-thought trigger like 'think through this step by step before giving your final answer' somewhere in your prompt."},pages:[
+      `<p>Chain-of-thought (CoT) prompting asks the model to reason step-by-step before delivering a final answer. It's one of the most impactful techniques for complex reasoning, multi-step problems, and tasks where you want to see the model's work.</p><h3>Why It Works</h3><p>When a model reasons through a problem explicitly, each step constrains and informs the next. This reduces errors that come from "jumping to conclusions" — the model is less likely to produce a confident but wrong answer when it's forced to show its reasoning first.</p><p>Think of it like asking someone to show their math. The process of writing it out catches mistakes the shortcut wouldn't.</p>`,
+      `<h3>How to Trigger Chain-of-Thought</h3><p>Simply add a reasoning instruction before the actual question. These phrases all work:</p><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li>"Think through this step by step before answering."</li><li>"Reason through this carefully, then give your conclusion."</li><li>"Let's work through this together."</li><li>"First, consider each factor. Then give your recommendation."</li></ul><div class="example-block good-ex">Think through this step by step before giving your final answer: A store sells apples for $0.50 each and oranges for $0.75 each. Alice bought 12 pieces of fruit for $7.50. How many of each did she buy?</div><p>CoT shines for math problems, logical reasoning, multi-criteria decisions, and any task where the answer depends on intermediate steps. It's less necessary for straightforward factual lookups or simple creative tasks.</p>`
+    ]},
+    {id:'a2',title:'Few-Shot Examples',xp:130,time:'14 min',quiz:[{q:"Why do few-shot examples often outperform written instructions alone?",options:["Examples use more tokens, giving the model more to work with","Examples show the exact pattern, vocabulary, and format you want — more precisely than any description can","Instructions confuse the model's reasoning systems","Examples force the model to memorize the right answer"],answer:1}],pages:[
+      `<p>Few-shot prompting provides 2–5 examples of the input → output pattern you want, before making your actual request. It's the single most reliable way to get consistent, styled output — especially for tasks with a specific format or voice.</p><h3>Why Examples Beat Instructions</h3><p>Telling the model what you want is good. Showing it is better. Examples demonstrate the exact pattern, vocabulary, length, and tone you're after — more precisely than any description could.</p><p>This is especially powerful for: consistent tone across many outputs, custom formatting patterns, classification tasks, and transformations where the "rule" is hard to describe but easy to show.</p>`,
+      `<h3>The Few-Shot Template</h3><p>Structure: show 2–3 input/output pairs, then provide the new input. The model completes the pattern.</p><div class="example-block good-ex">I'll show you examples, then give you a new input to transform the same way.
+
+Input: "The meeting ran long"
+Output: "Team sync exceeded scheduled duration"
+
+Input: "Our app crashed"
+Output: "Application experienced an unexpected service interruption"
+
+Input: "John is bad at Excel"
+Output:</div><p>The model extracts the underlying transformation rule (informal → formal corporate language) and applies it. You never had to explain the rule — the examples did it for you.</p><p>For best results: use 2–4 examples, keep them consistent in structure, and make sure they represent the full range of variation you expect in real inputs.</p>`
+    ]},
+    {id:'a3',title:'Iterative Refinement',xp:110,time:'11 min',quiz:[{q:"You got an AI response that's too long and too formal. What's the most effective next step?",options:["Start over with a completely different prompt","Accept the output and edit it manually","Tell the AI: 'The previous response was too long and too formal. Rewrite it under 150 words in a conversational tone.'","Ask the AI to 'try again'"],answer:2}],pages:[
+      `<p>The best prompts are rarely written in one shot. Iterative refinement is a systematic process of improving prompts through successive rounds of testing and adjustment — the same way good writing goes through drafts.</p><h3>The Refinement Loop</h3><ol style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li><strong>Draft</strong> — write the best prompt you can</li><li><strong>Run</strong> — send it and examine the output carefully</li><li><strong>Diagnose</strong> — what's wrong, missing, or off?</li><li><strong>Patch</strong> — add the signals that would fix the diagnosis</li><li><strong>Repeat</strong> — until output is excellent</li></ol><p>Most people stop at step 2. They accept the first output as "what AI can do." Skilled prompters treat that first output as a diagnostic — raw material that tells them what to add next.</p>`,
+      `<h3>Refinement in Action</h3><p>Here's what a refinement instruction looks like — you feed back the problem and ask for a rewrite:</p><div class="example-block good-ex">The previous output was too formal and used too many bullet points. I need this to read as a natural, flowing blog post written in first person. Rewrite it with those changes, keeping the same core content.</div><p>Notice: specific diagnosis ("too formal," "too many bullet points"), specific fix ("flowing blog post, first person"), specific constraint ("same core content"). Each piece of the refinement instruction targets a different failure mode.</p><p>As you practice, you'll get faster at diagnosing outputs — and your first drafts will improve because you'll anticipate the common failure modes before you send.</p>`
+    ]}
   ]},
-  {id:4,name:'Domain Tracks',icon:'',unlocked:false,color:'orange',lessons:[
-    {id:'d1',title:'Prompting for Code',xp:140,time:'15 min',body:`<p>Coding prompts need extreme precision: language, version, framework, constraints, edge cases, and desired style.</p><div class="example-block good-ex">Write a Python function (3.10+) that takes a list of dictionaries and returns a new list sorted by a given key in O(n log n) time. Handle the case where the key doesn't exist. Include type hints and a docstring. No third-party libraries.</div>`},
-    {id:'d2',title:'Prompting for Writing',xp:120,time:'12 min',body:`<p>For writing tasks, specify: audience, tone, length, format, POV, style references, and what to avoid.</p><div class="example-block good-ex">Write a 400-word LinkedIn post about burnout from the POV of a recovering founder. First-person. Vulnerable but not self-pitying. End with one concrete lesson. Write like a human, not a career coach. No hashtags.</div>`},
-    {id:'d3',title:'Prompting for Research',xp:130,time:'13 min',body:`<p>Research prompts should specify: scope, depth, recency, format, sources to draw from, and output structure.</p><div class="example-block good-ex">Give me a structured briefing on the current state of solid-state batteries as of 2024. Cover: (1) key technical barriers, (2) top 3 companies leading development, (3) realistic commercialization timeline. Use accessible language but don't oversimplify. Cite the type of sources a researcher would trust.</div>`}
+  {id:4,name:'Domain Tracks',icon:'',color:'orange',lessons:[
+    {id:'d1',title:'Prompting for Code',xp:140,time:'15 min',quiz:[{q:"When prompting for a code function, which element most prevents a common class of bugs?",options:["Specifying the programming language","Describing the function's name","Specifying how to handle edge cases like null, empty, or invalid inputs","Asking for comments in the code"],answer:2},{q:"A developer submits: 'Write a function that sorts a list.' What is most critically missing?",options:["The function name","Language, input/output types, edge case handling, and performance requirements","Whether to sort ascending or descending","The developer's experience level"],answer:1}],applyChallenge:{instructions:"Write a code-related prompt that includes a role (e.g. senior engineer), the programming language, and at least one constraint or edge case requirement.",evalSystemPrompt:`You are a prompt engineering instructor. Evaluate if the following prompt: (1) assigns a coding-related role (e.g. "You are a senior Python developer"), (2) names a specific programming language, AND (3) includes at least one constraint, edge case requirement, or quality standard (e.g. handle null inputs, include type hints, O(n log n) complexity). All three must be present. Reply ONLY with valid JSON, no extra text: {"pass": true/false, "reason": "one sentence"}`,failHint:"Not quite — include a role ('You are a senior [language] developer'), name the language explicitly, and add at least one constraint like edge case handling, a complexity requirement, or a style rule."},pages:[
+      `<p>Code prompts require a level of precision that most other tasks don't. Ambiguity in a writing prompt produces mediocre prose. Ambiguity in a code prompt produces bugs, wrong assumptions, or code that doesn't run.</p><h3>The Code Prompt Checklist</h3><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li><strong>Language and version</strong> — Python 3.10+, TypeScript 5, etc.</li><li><strong>Framework constraints</strong> — "using only the standard library"</li><li><strong>Input/output types</strong> — what goes in, what comes out</li><li><strong>Edge cases to handle</strong> — null, empty, invalid inputs</li><li><strong>Performance requirements</strong> — O(n log n), under 100ms, etc.</li><li><strong>Style requirements</strong> — type hints, docstrings, comments</li><li><strong>What to avoid</strong> — no third-party libraries, no recursion</li></ul>`,
+      `<h3>A Well-Specified Code Prompt</h3><p>Here's an example that covers all the bases:</p><div class="example-block good-ex">Write a Python function (3.10+) that takes a list of dictionaries and returns a new list sorted by a given key in O(n log n) time. Handle the case where the key doesn't exist in some dictionaries — those items should sort to the end. Include type hints and a docstring. No third-party libraries.</div><p>Every clause in that prompt prevents a specific failure mode: the version prevents deprecated syntax, the complexity requirement prevents a naive O(n²) solution, the edge case prevents a KeyError, and the style requirements mean the output is production-ready.</p><p>Specify what you need. Code that "works" but doesn't handle edge cases or lacks type hints costs more to fix later than it saves to ask for now.</p>`
+    ]},
+    {id:'d2',title:'Prompting for Writing',xp:120,time:'12 min',quiz:[{q:"Which element has the greatest impact on distinctiveness of AI-generated writing?",options:["Word count specification","Topic clarity","Specific tone direction with target audience and style reference","Asking for a certain number of paragraphs"],answer:2},{q:"A LinkedIn post prompt says: 'Write about burnout.' What addition makes the output most distinctive?",options:["Make it 300 words","Write it in first person","From the POV of a recovering founder — vulnerable but not self-pitying. No hashtags. End with one concrete lesson. Write like a human, not a career coach.","Make it professional"],answer:2}],pages:[
+      `<p>Writing prompts have more dimensions than most people realize. Getting good writing from an AI isn't about asking nicely — it's about specifying every variable that shapes the output.</p><h3>The Writing Prompt Anatomy</h3><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li><strong>Audience</strong> — who is this for? What do they already know?</li><li><strong>Tone</strong> — formal, casual, vulnerable, authoritative?</li><li><strong>Length</strong> — approximate word count or "under X words"</li><li><strong>Format</strong> — listicle, narrative, essay, op-ed?</li><li><strong>POV</strong> — first person, third person, brand voice?</li><li><strong>Style reference</strong> — "like a Paul Graham essay" or "Economist style"</li><li><strong>What to avoid</strong> — clichés, hashtags, corporate speak, passive voice</li></ul>`,
+      `<h3>Writing Prompt in Practice</h3><p>Every variable in this example is load-bearing — remove any one and the output degrades:</p><div class="example-block good-ex">Write a 400-word LinkedIn post about burnout from the POV of a recovering founder. First-person. Vulnerable but not self-pitying. End with one concrete lesson. Write like a human, not a career coach. No hashtags.</div><p>The tone direction ("vulnerable but not self-pitying") prevents two failure modes at once. The style note ("like a human, not a career coach") rules out the generic motivational voice LLMs default to. The format instruction ("end with one concrete lesson") gives the piece structure without making it formulaic.</p><p>Good writing prompts read like a creative brief. If you've ever worked with a copywriter or editor, you're writing the brief — not making a wish.</p>`
+    ]},
+    {id:'d3',title:'Prompting for Research',xp:130,time:'13 min',quiz:[{q:"What's the most powerful addition to a research prompt that forces the AI past generic consensus-speak?",options:["Ask for a longer response","Specify the number of sources to cite","Ask to 'include the main controversy or open debate in this field'","Ask for bullet points"],answer:2},{q:"You need a thorough but focused research briefing. Which structure instruction works best?",options:["Give me everything you know about X","Be comprehensive","Cover exactly: (1) key barriers, (2) top 3 players, (3) realistic timeline — in accessible language, don't oversimplify","Make it detailed"],answer:2}],pages:[
+      `<p>Research prompts are about controlling scope, depth, and structure. Without these controls, AI tends to produce shallow, generic overviews — confident-sounding but lacking real insight.</p><h3>Research Prompt Variables</h3><ul style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li><strong>Scope</strong> — narrow the topic tightly, don't leave it open-ended</li><li><strong>Depth</strong> — "surface-level overview" vs. "deep technical detail"</li><li><strong>Structure</strong> — specify the sections you want explicitly</li><li><strong>Source type</strong> — "like a BCG report" or "cite academic-style sources"</li><li><strong>Audience</strong> — "accessible to a non-expert" vs. "peer-review level"</li><li><strong>What to include</strong> — controversies, open questions, what's commonly misunderstood</li></ul>`,
+      `<h3>A Strong Research Prompt</h3><div class="example-block good-ex">Give me a structured briefing on the current state of solid-state batteries as of 2024. Cover: (1) key technical barriers, (2) top 3 companies leading development, (3) realistic commercialization timeline. Use accessible language but don't oversimplify. Cite the type of sources a researcher would trust.</div><p>The numbered structure forces a specific coverage order. "Accessible but don't oversimplify" sets the right register. "Type of sources a researcher would trust" signals depth without requiring actual citations (which LLMs often hallucinate).</p><p>One powerful addition for research prompts: <em>"Include the main controversy or open debate in this field."</em> This forces the model past consensus-speak into the parts that are actually interesting and unresolved.</p>`
+    ]}
   ]},
-  {id:5,name:'Master Challenges',icon:'',unlocked:false,color:'orange',lessons:[
-    {id:'m1',title:'Master Challenge: Email Suite',xp:200,time:'20 min',body:`<p>Your final challenge for this tier: craft a complete email communication suite for a product launch.</p><h3>The Challenge</h3><p>Using only prompting techniques from all previous tiers, generate 3 emails: (1) internal team announcement, (2) customer announcement, (3) press outreach. Each must have distinct tone, appropriate length, and high specificity. You'll be evaluated on clarity, role use, context richness, and format control.</p><div class="example-block good-ex">Start with: "You are [role]. The context is [X]. Write [format] for [audience]. Tone: [Y]. Constraints: [Z]."</div>`},
-    {id:'m2',title:'Master Challenge: Code Review',xp:250,time:'25 min',body:`<p>Write a prompt that gets an AI to perform a thorough, expert-level code review of a Python function you provide.</p><h3>Requirements</h3><p>Your prompt must elicit feedback on: correctness, performance, readability, edge cases, and security. The AI response should be structured (H2 headers per category), actionable, and ranked by priority.</p><p>This challenge tests your ability to combine role assignment, format control, context setting, and constraint specification simultaneously.</p>`}
+  {id:5,name:'Master Challenges',icon:'',color:'orange',lessons:[
+    {id:'m1',title:'Master Challenge: Email Suite',xp:200,time:'20 min',quiz:[{q:"Why is iterative refinement especially critical when building a multi-email communication suite?",options:["Because emails are longer than other outputs","Each email has different tone, audience, and constraints — testing each separately ensures all three land correctly","Because AI makes more mistakes with formal writing","Because you need to generate more tokens total"],answer:1},{q:"Which technique combination is most essential to ensure each email feels distinct and purposeful?",options:["Word count + formatting","Role assignment + tone direction + audience context applied specifically for each email","Few-shot examples + chain-of-thought","Length control + grammar checking"],answer:1}],applyChallenge:{instructions:"Write a complete prompt that demonstrates all five techniques from the course: role assignment, context, tone direction, a constraint, and output format specification.",evalSystemPrompt:`You are a prompt engineering instructor evaluating a master-level prompt. Check if it contains ALL FIVE of these components: (1) role assignment (e.g. "You are a..."), (2) context or background information, (3) tone direction, (4) an explicit constraint (word limit, rule, or restriction), (5) output format specification. All five must be clearly present. Reply ONLY with valid JSON, no extra text: {"pass": true/false, "reason": "one sentence"}`,failHint:"Not quite — a master prompt needs all five: a role, context (background info), tone direction, a constraint (like a word limit or restriction), and an output format instruction."},pages:[
+      `<p>This is your Tier 5 challenge. You're going to apply everything you've learned to produce a complete, professional email communication suite for a product launch — three distinct emails, each requiring different technique combinations.</p><h3>The Challenge</h3><p>Using prompting techniques from all previous tiers, craft prompts that generate three emails:</p><ol style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li><strong>Internal team announcement</strong> — casual, energizing, action-oriented</li><li><strong>Customer announcement</strong> — clear, benefit-focused, appropriate length</li><li><strong>Press outreach</strong> — professional, concise, strong hook</li></ol><p>Each email must have a distinct tone, appropriate length for its audience, and high specificity. You'll be evaluated on how well you use role assignment, context, tone, and format control together.</p>`,
+      `<h3>How to Approach It</h3><p>Structure each prompt with all five components working together:</p><div class="example-block good-ex">You are [role]. The context is [X]. Write [format] for [audience]. Tone: [Y]. Constraints: [Z].</div><p>For example, for the press outreach email you might write: "You are a PR director at a Series A startup. We're launching a B2B SaaS tool that automates compliance reporting for healthcare companies. Write a cold pitch email to a TechCrunch reporter. Tone: confident, newsworthy, no jargon. Under 120 words. Include a compelling subject line."</p><p>The difference between a pass and fail on this challenge is specificity. Vague prompts produce generic emails. Specific prompts produce emails you'd actually send. Head to the Sandbox and put these prompts to the test.</p>`
+    ]},
+    {id:'m2',title:'Master Challenge: Code Review',xp:250,time:'25 min',quiz:[{q:"What combination of elements makes a code review prompt produce genuinely expert-level, structured output?",options:["Polite language + detailed code snippet","Role (senior engineer) + format control (H2 headers, severity ranking) + constraint (specific fixes, not vague observations)","Long prompt + lots of context","Chain-of-thought + few-shot examples"],answer:1},{q:"A code review prompt says: 'Review this code and tell me what's wrong.' What constraint most improves usefulness?",options:["Add 'please' and 'thank you'","Specify the programming language","Rank issues by severity and suggest specific code-level fixes — not just identify problems","Ask for a longer response"],answer:2}],pages:[
+      `<p>Your final master challenge: write a prompt that extracts a thorough, expert-level code review from an AI — structured, actionable, and prioritized.</p><h3>What Your Prompt Must Produce</h3><p>The AI response must cover all five dimensions of a professional code review:</p><ol style="margin:12px 0 12px 20px;color:var(--text2);font-size:14px;line-height:2.2"><li><strong>Correctness</strong> — does it do what it claims?</li><li><strong>Performance</strong> — is it efficient enough for the use case?</li><li><strong>Readability</strong> — is it maintainable by others?</li><li><strong>Edge cases</strong> — what inputs break it?</li><li><strong>Security</strong> — are there vulnerabilities?</li></ol><p>The response must use H2 headers for each category, rank issues by severity, and suggest specific fixes — not just identify problems.</p>`,
+      `<h3>What Makes This Hard</h3><p>This challenge tests your ability to combine four techniques simultaneously: role assignment (senior engineer), format control (H2 headers, severity ranking), context setting (the code and its purpose), and constraint specification (actionable fixes, not vague observations).</p><p>A weak prompt gets a generic "looks pretty good, maybe add error handling" response. A strong prompt gets a structured, opinionated review that reads like it came from a senior engineer at a top company.</p><p>Use the Sandbox to iterate. Send a test prompt, diagnose what's missing from the output, and refine until the review is genuinely useful. That iteration process <em>is</em> the skill this challenge is testing.</p>`
+    ]}
   ]}
 ];
 
@@ -1138,6 +1302,11 @@ function showView(name){
 }
 
 // ── Learn ────────────────────────────────────────────────
+function isTierUnlocked(tierIndex){
+  if(tierIndex===0)return true;
+  return TIERS[tierIndex-1].lessons.every(l=>state.completedLessons.includes(l.id));
+}
+
 function renderLearn(){
   // Update stats
   document.getElementById('totalXPDisp').textContent=state.xp;
@@ -1146,22 +1315,24 @@ function renderLearn(){
   document.getElementById('streakDisp').textContent=state.streak+'⏱';
   document.getElementById('streakTitle').textContent=`Day ${state.streak} Streak!`;
   document.getElementById('streakSub').textContent=state.streak===1?'Complete a lesson today to start your streak!':'Great momentum! Don\'t break the chain.';
-
   const container=document.getElementById('lessonsContainer');
   container.innerHTML='';
-  TIERS.forEach(tier=>{
+  TIERS.forEach((tier,tierIdx)=>{
+    const unlocked=isTierUnlocked(tierIdx);
     const sd=document.createElement('div');sd.className='tier-section';
     const tierDone=state.completedLessons.filter(id=>tier.lessons.some(l=>l.id===id)).length;
-    const badge=tier.unlocked?`<span class="tier-badge">${tier.name}</span>`:`<span class="tier-badge locked-badge">Locked: ${tier.name}</span>`;
-    sd.innerHTML=`<div class="tier-header">${badge}<span style="font-size:12px;color:var(--muted);margin-left:auto">${tierDone}/${tier.lessons.length} complete</span></div><div class="lessons-grid" id="tier-${tier.id}-lessons"></div>`;
+    const badge=unlocked?`<span class="tier-badge">${tier.name}</span>`:`<span class="tier-badge locked-badge">Locked: ${tier.name}</span>`;
+    const lockHint=!unlocked?`<span style="font-size:11px;color:var(--muted);margin-left:8px">Complete all ${TIERS[tierIdx-1].name} lessons to unlock</span>`:'';
+    sd.innerHTML=`<div class="tier-header">${badge}${lockHint}<span style="font-size:12px;color:var(--muted);margin-left:auto">${tierDone}/${tier.lessons.length} complete</span></div><div class="lessons-grid" id="tier-${tier.id}-lessons"></div>`;
     container.appendChild(sd);
     const grid=sd.querySelector(`#tier-${tier.id}-lessons`);
     tier.lessons.forEach(lesson=>{
       const done=state.completedLessons.includes(lesson.id);
-      const locked=!tier.unlocked;
+      const locked=!unlocked;
       const card=document.createElement('div');
       card.className=`lesson-card${done?' done':''}${locked?' locked-lesson':''}`;
-      card.innerHTML=`<span class="lesson-num">${lesson.id.toUpperCase()}</span><span class="lesson-title">${lesson.title}</span><div class="lesson-meta"><span class="lesson-xp">+${lesson.xp} XP</span><span class="lesson-time">Duration: ${lesson.time}</span>${done?'<span class="lesson-done-icon" style="margin-left:auto;font-size:11px;font-weight:700;color:var(--accent-text)">DONE</span>':''}</div>`;
+      const pageCount=lesson.pages?lesson.pages.length:1;
+      card.innerHTML=`<span class="lesson-num">${lesson.id.toUpperCase()}</span><span class="lesson-title">${lesson.title}</span><div class="lesson-meta"><span class="lesson-xp">+${lesson.xp} XP</span><span class="lesson-time">${pageCount} pages · ${lesson.time}</span>${done?'<span class="lesson-done-icon" style="margin-left:auto;font-size:11px;font-weight:700;color:var(--accent-text)">DONE</span>':''}</div>`;
       if(!locked)card.onclick=()=>openLesson(lesson);
       grid.appendChild(card);
     });
@@ -1174,28 +1345,168 @@ function renderLearn(){
     const done=state.passedMissions.includes(m.id);
     const mc=document.createElement('div');
     mc.className=`mission-card${done?' done-mission':''}`;
-    mc.innerHTML=`<div class="mission-top"><span class="mission-title">${done?'DONE: ':''} ${m.title}</span><span class="mission-xp">+${m.xp} XP</span></div><div class="mission-desc">${m.desc}</div><div class="mission-constraint">Constraint: ${m.constraint}</div><div class="mission-sandbox" style="display:none"><span class="input-label" style="margin-top:12px;display:block">Your Prompt</span><textarea class="prompt-input" id="mission-${m.id}-input" placeholder="Write your prompt…"></textarea><div class="live-actions" style="margin-top:8px"><button class="btn-send" onclick="runMission('${m.id}')">Submit Mission →</button></div><div id="mission-${m.id}-result"></div></div>`;
+    mc.innerHTML=`<div class="mission-top"><div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0"><span class="mission-title">${done?'✓ ':''} ${m.title}</span><span class="mission-xp">+${m.xp} XP</span></div><div class="mission-chevron">▾</div></div><div class="mission-desc">${m.desc}</div><div class="mission-constraint">Constraint: ${m.constraint}</div><div class="mission-sandbox" style="display:none"><span class="input-label" style="margin-top:12px;display:block">Your Prompt</span><textarea class="prompt-input" id="mission-${m.id}-input" placeholder="Write your prompt…"></textarea><div class="live-actions" style="margin-top:8px"><button class="btn-send" onclick="runMission('${m.id}')">Submit Mission →</button></div><div id="mission-${m.id}-result"></div></div>`;
     mc.querySelector('.mission-top').onclick=()=>{
       const sb=mc.querySelector('.mission-sandbox');
-      sb.style.display=sb.style.display==='none'?'block':'none';
+      const open=sb.style.display==='none';
+      sb.style.display=open?'block':'none';
+      mc.classList.toggle('expanded',open);
     };
     ms.appendChild(mc);
   });
   container.appendChild(ms);
 }
 
-function openLesson(lesson){
-  currentLesson=lesson;
-  document.getElementById('modalTitle').textContent=lesson.title;
-  document.getElementById('modalBody').innerHTML=lesson.body;
-  document.getElementById('modalXP').textContent=`+${lesson.xp} XP on completion`;
+// ── Quiz ─────────────────────────────────────────────────
+function enterQuizPhase(){
+  lessonPhase='quiz';currentQuizQuestion=0;renderQuizPage();
+}
+function renderQuizPage(){
+  const q=currentLesson.quiz[currentQuizQuestion];
+  document.getElementById('modalBody').innerHTML=`
+    <div class="quiz-wrap">
+      <div class="quiz-label">Knowledge Check · Question ${currentQuizQuestion+1} of ${currentLesson.quiz.length}</div>
+      <div class="quiz-q">${q.q}</div>
+      <div class="quiz-options">${q.options.map((opt,i)=>`<button class="quiz-opt" onclick="answerQuiz(${i})">${opt}</button>`).join('')}</div>
+    </div>`;
+  document.getElementById('modalProgress').innerHTML='';
+  document.getElementById('modalBackBtn').style.display='none';
+  document.getElementById('modalCompleteBtn').style.display='none';
+}
+function answerQuiz(idx){
+  const q=currentLesson.quiz[currentQuizQuestion];
+  document.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+    o.disabled=true;
+    if(i===q.answer)o.classList.add('quiz-correct');
+    else if(i===idx)o.classList.add('quiz-wrong');
+  });
   const btn=document.getElementById('modalCompleteBtn');
-  if(state.completedLessons.includes(lesson.id)){btn.textContent='Already Completed ✓';btn.style.opacity='.5';}
-  else{btn.textContent='Mark complete';btn.style.opacity='1';}
+  btn.style.display='';
+  if(idx===q.answer){
+    const isLastQ=currentQuizQuestion===currentLesson.quiz.length-1;
+    btn.style.opacity='1';
+    if(isLastQ){btn.textContent='Complete & Earn XP →';btn.onclick=completeLesson;}
+    else{btn.textContent='Next Question →';btn.onclick=()=>{currentQuizQuestion++;renderQuizPage();};}
+  } else {
+    showQuizResult('wrong');
+  }
+}
+function showQuizResult(type){
+  const btn=document.getElementById('modalCompleteBtn');
+  btn.style.display='';
+  btn.textContent='← Retry Lesson';btn.style.opacity='1';
+  btn.onclick=()=>{lessonPhase='reading';currentLessonPage=0;currentQuizQuestion=0;renderLessonPage();};
+}
+
+// ── Apply Challenge ───────────────────────────────────────
+function showApplyChallenge(){
+  lessonPhase='apply';
+  const ch=currentLesson.applyChallenge;
+  document.getElementById('modalBody').innerHTML=`
+    <div class="apply-challenge-wrap">
+      <div class="apply-challenge-label">Pro Apply Challenge</div>
+      <p style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.6">${ch.instructions}</p>
+      <textarea class="prompt-input" id="applyInput" placeholder="Write your prompt here…" style="min-height:100px"></textarea>
+      <div id="applyResult" style="margin-top:12px;display:none"></div>
+    </div>`;
+  document.getElementById('modalProgress').innerHTML='';
+  const backBtn=document.getElementById('modalBackBtn');
+  backBtn.style.display='';backBtn.textContent='Skip & Complete';
+  backBtn.onclick=finishLesson;
+  const btn=document.getElementById('modalCompleteBtn');
+  btn.style.display='';btn.style.opacity='1';
+  btn.textContent='Submit for Review →';btn.onclick=submitApplyChallenge;
+}
+async function submitApplyChallenge(){
+  const input=document.getElementById('applyInput');
+  const result=document.getElementById('applyResult');
+  if(!input||!input.value.trim())return;
+  const btn=document.getElementById('modalCompleteBtn');
+  btn.disabled=true;btn.textContent='Evaluating…';btn.style.opacity='.6';
+  result.style.display='none';
+  const ch=currentLesson.applyChallenge;
+  try{
+    const token=getToken();
+    const resp=await fetch('/api/sandbox/run',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({systemPrompt:ch.evalSystemPrompt, userText:'Prompt to evaluate: '+input.value.trim()})
+    });
+    const data=await resp.json();
+    if(!resp.ok)throw new Error(data.error||'Request failed');
+    let judgment;
+    try{const m=data.result.match(/\{[\s\S]*\}/);judgment=JSON.parse(m?m[0]:data.result);}
+    catch{throw new Error('Could not parse evaluation');}
+    result.style.display='block';
+    if(judgment.pass){
+      result.innerHTML=`<p style="color:var(--accent-text);font-size:13px;font-weight:700">Great work! Earning your XP…</p>`;
+      setTimeout(finishLesson,800);
+    } else {
+      result.innerHTML=`<p style="color:var(--red);font-size:13px">${ch.failHint}</p>`;
+      btn.disabled=false;btn.textContent='Submit for Review →';btn.style.opacity='1';
+    }
+  } catch(e){
+    result.style.display='block';
+    result.innerHTML=`<p style="color:var(--red);font-size:13px">Could not evaluate prompt — ${e.message}. Try again.</p>`;
+    btn.disabled=false;btn.textContent='Submit for Review →';btn.style.opacity='1';
+  }
+}
+
+function openLesson(lesson){
+  currentLesson=lesson;currentLessonPage=0;
+  lessonPhase='reading';currentQuizQuestion=0;
+  renderLessonPage();
   document.getElementById('lessonModal').classList.add('open');
 }
-function closeModal(){document.getElementById('lessonModal').classList.remove('open');currentLesson=null;}
+function renderLessonPage(){
+  const pages=currentLesson.pages;
+  const i=currentLessonPage;
+  const isLast=i===pages.length-1;
+  const alreadyDone=state.completedLessons.includes(currentLesson.id);
+  document.getElementById('modalTitle').textContent=currentLesson.title;
+  document.getElementById('modalBody').innerHTML=pages[i];
+  document.getElementById('modalXP').textContent=`+${currentLesson.xp} XP on completion`;
+  // Progress dots
+  document.getElementById('modalProgress').innerHTML=pages.map((_,idx)=>
+    `<div class="mprog-dot${idx<i?' done':idx===i?' active':''}"></div>`
+  ).join('');
+  // Back button
+  document.getElementById('modalBackBtn').style.display=i>0?'':'none';
+  // Next / Complete button
+  const btn=document.getElementById('modalCompleteBtn');
+  btn.style.display='';
+  if(isLast && alreadyDone){
+    btn.textContent='Already Completed ✓';btn.style.opacity='.5';btn.onclick=null;
+  } else if(isLast){
+    btn.textContent='Take the Quiz →';btn.style.opacity='1';btn.onclick=enterQuizPhase;
+  } else {
+    btn.textContent='Next →';btn.style.opacity='1';btn.onclick=lessonPageNext;
+  }
+}
+function lessonPageNext(){
+  if(currentLessonPage<currentLesson.pages.length-1){
+    currentLessonPage++;
+    renderLessonPage();
+    document.getElementById('modalBody').scrollTop=0;
+  }
+}
+function lessonPageBack(){
+  if(currentLessonPage>0){currentLessonPage--;renderLessonPage();}
+}
+function closeModal(){
+  document.getElementById('lessonModal').classList.remove('open');
+  currentLesson=null;currentLessonPage=0;
+  lessonPhase='reading';currentQuizQuestion=0;
+}
 function completeLesson(){
+  if(!currentLesson||state.completedLessons.includes(currentLesson.id))return;
+  const plan=authUser?authUser.plan:null;
+  if(currentLesson.applyChallenge&&plan==='pro'){
+    showApplyChallenge();return;
+  }
+  finishLesson();
+}
+function finishLesson(){
   if(!currentLesson||state.completedLessons.includes(currentLesson.id))return;
   state.completedLessons.push(currentLesson.id);
   addXP(currentLesson.xp,'Lesson Complete!');
@@ -1230,6 +1541,20 @@ async function runMission(id){
     result.innerHTML='Note: Could not reach Gemini. Check your connection and try again.';
   }
   if(btn){btn.disabled=false;btn.textContent='Submit Mission →';btn.style.opacity='1';}
+}
+
+// ── Sandbox mode switcher ─────────────────────────────────
+let sbMode = 'offline';
+function setSbMode(mode) {
+  sbMode = mode;
+  document.getElementById('sbOfflineTab').classList.toggle('active', mode === 'offline');
+  document.getElementById('sbAiTab').classList.toggle('active', mode === 'ai');
+  const btn = document.getElementById('sbSendBtn');
+  if(btn) btn.textContent = mode === 'ai' ? 'Get AI Feedback →' : 'Analyze Offline →';
+}
+function dispatchSandbox() {
+  if(sbMode === 'ai') runSandbox();
+  else runSandboxOffline();
 }
 
 // ── Sandbox ──────────────────────────────────────────────
@@ -1270,58 +1595,125 @@ async function runSandbox(){
   if(!authUser){openAuth('signup');return;}
   const input=document.getElementById('sbInput');
   const v=input.value.trim();if(!v)return;
-  const sendBtn = document.querySelector('#view-sandbox .btn-send');
+  const sendBtn=document.getElementById('sbSendBtn');
   if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='Thinking…';sendBtn.style.opacity='0.6';}
   try {
-    const result = await evaluatePrompt(v);
+    const result = await evaluatePromptFeedback(v);
     const score = result.score;
+    // Store in module-level vars so onclick handlers can access without embedding strings in HTML
+    _sbPromptText = v;
+    _sbPromptScore = score;
+    _sbTemplate = result.template||'';
     document.getElementById('sbScorePill').textContent=`Score: ${score}/100`;
     const box=document.getElementById('sbResponse');box.classList.add('show');
     document.getElementById('sbBar').style.width=score+'%';
     document.getElementById('sbScoreVal').textContent=score+'/100';
-    document.getElementById('sbResponseText').textContent = result.response || '(No response generated)';
     const tips = result.tips||[];
     const bd = result.breakdown||{};
-    const bdHtml = Object.keys(bd).length ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">${Object.entries(bd).map(([k,v])=>`<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border)">${k}: ${v}</span>`).join('')}</div>` : '';
-    document.getElementById('sbTips').innerHTML=`<strong>AI Feedback</strong>${tips.map(t=>`<div style="margin-top:6px">• ${t}</div>`).join('')}${bdHtml}`;
-    if(score>=70)addXP(25,'Sandbox Practice');
+    const bdHtml = Object.keys(bd).length ? `<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">${Object.entries(bd).map(([k,v])=>`<span style="font-size:11px;padding:3px 9px;border-radius:6px;background:var(--bg);border:1px solid var(--border)">${k}: ${v}</span>`).join('')}</div>` : '';
+    document.getElementById('sbTips').innerHTML=`<strong>How to improve your prompt</strong>${tips.map(t=>`<div style="margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:8px;border-left:3px solid var(--accent-text);font-size:14px">${t}</div>`).join('')}${bdHtml}`;
+    const copySvgIcon=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+    if(_sbTemplate){
+      const highlighted = _sbTemplate.replace(/\[([^\]]+)\]/g,'<span class="template-blank">[$1]</span>');
+      document.getElementById('sbResponseText').innerHTML=`<div class="template-block"><div class="template-block-header"><span class="template-block-label">Your Improved Prompt Template</span><button class="pc-copy" id="tmplCopyBtn" onclick="copyTemplate()" title="Copy template">${copySvgIcon}</button></div><div class="template-text">${highlighted}</div></div>`;
+    } else {
+      document.getElementById('sbResponseText').innerHTML='';
+    }
+    // Publish area — pro users with score ≥ 90
+    const pubArea = document.getElementById('sbPublishArea');
+    if(score >= 90 && authUser && authUser.plan === 'pro'){
+      pubArea.innerHTML=`
+        <button class="btn-publish" onclick="togglePublishForm()">Publish to Community Library</button>
+        <div class="publish-form" id="publishForm">
+          <div class="pub-row">
+            <input class="pub-input" id="pubTitle" placeholder="Give your prompt a title…" maxlength="80">
+            <select class="pub-select" id="pubCategory">
+              <option value="Writing">Writing</option>
+              <option value="Code">Code</option>
+              <option value="Research">Research</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Productivity">Productivity</option>
+              <option value="Learning">Learning</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="pub-error" id="pubError"></div>
+          <button class="btn-send" style="width:100%;padding:12px" onclick="submitPublish()">Publish →</button>
+        </div>`;
+    } else if(score >= 90 && authUser && authUser.plan !== 'pro'){
+      pubArea.innerHTML=`<div style="margin-top:12px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px">Scored 90+! <span style="font-weight:700;color:var(--purple)">Upgrade to Pro</span> to publish to the Community Library.</div>`;
+    } else {
+      pubArea.innerHTML='';
+    }
+    if(score>=75)addXP(25,'Sandbox Practice');
   } catch(e) {
     if(e.code === 'not_authenticated'){openAuth('signup');return;}
     console.error('API error:', e);
-    const score = scorePromptFallback(v);
     const isLimit = e.code === 'limit_reached';
     const box=document.getElementById('sbResponse');box.classList.add('show');
-    document.getElementById('sbBar').style.width=score+'%';
-    document.getElementById('sbScoreVal').textContent=score+'/100 (offline)';
-    document.getElementById('sbResponseText').textContent= isLimit
-      ? '(Monthly AI quota used — showing offline score. Upgrade to Pro for unlimited AI-powered runs.)'
-      : '(AI unavailable — showing offline score)';
+    document.getElementById('sbBar').style.width='0%';
+    document.getElementById('sbScoreVal').textContent='—';
+    document.getElementById('sbResponseText').innerHTML='';
+    document.getElementById('sbPublishArea').innerHTML='';
     document.getElementById('sbTips').innerHTML= isLimit
-      ? `<strong>Offline Mode</strong><div style="margin-top:4px">Your ${FREE_LIMIT} free AI runs this month are used up. You can still practice with offline scoring!</div>`
+      ? `<strong>Offline Mode</strong><div style="margin-top:4px">Your ${FREE_LIMIT} free AI runs this month are used up. Switch to Offline Score to keep practicing!</div>`
       : `<strong>Error</strong><div style="margin-top:4px;font-size:12px;opacity:0.8">${e.message||'Unknown error'}</div>`;
   }
-  if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Send to AI →';sendBtn.style.opacity='1';}
+  if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Get AI Feedback →';sendBtn.style.opacity='1';}
 }
 
 function runSandboxOffline(){
   const input=document.getElementById('sbInput');
   const v=input.value.trim();if(!v)return;
   const {score, found, missing} = scorePromptOffline(v);
-  document.getElementById('sbScorePill').textContent=`Score: ${score}/100 (offline)`;
+  document.getElementById('sbScorePill').textContent=`Score: ${score}/100`;
   const box=document.getElementById('sbResponse');box.classList.add('show');
   document.getElementById('sbBar').style.width=score+'%';
-  document.getElementById('sbScoreVal').textContent=score+'/100 (offline)';
+  document.getElementById('sbScoreVal').textContent=score+'/100';
 
-  const foundHtml = found.length
-    ? `<div style="margin-top:8px"><strong style="color:var(--accent-text)">Detected in your prompt:</strong>${found.map(f=>`<div style="margin-top:4px;padding:4px 10px;display:inline-block;margin-right:6px;border-radius:6px;background:var(--accent-bg);border:1px solid var(--accent-border);font-size:12px">&#10003; ${f}</div>`).join('')}</div>`
-    : '';
-  const missingHtml = missing.length
-    ? `<div style="margin-top:12px"><strong>Missing — add these to boost your score:</strong>${missing.map(m=>`<div style="margin-top:6px;padding:6px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:13px"><strong>${m.label}:</strong> ${m.tip}</div>`).join('')}</div>`
-    : '<div style="margin-top:8px;color:var(--accent-text);font-weight:700">Great job — your prompt covers all the key components!</div>';
+  // Dissection checks with component metadata
+  const dissectChecks = [
+    {label:'Role',    cls:'role',       maxPts:15, pass:/\b(you are|act as|your role|pretend|persona)\b/i.test(v),       tip:'Assign a role — e.g. "You are a senior copywriter…"'},
+    {label:'Format',  cls:'format',     maxPts:10, pass:/\b(format|list|table|paragraph|bullet|numbered|markdown|json|csv|steps)\b/i.test(v), tip:'Specify format — e.g. "as a numbered list" or "in a table"'},
+    {label:'Tone',    cls:'tone',       maxPts:8,  pass:/\b(tone|style|voice|professional|casual|formal|brief|friendly|concise|witty|empathetic)\b/i.test(v), tip:'Direct the tone — e.g. "in a professional but friendly tone"'},
+    {label:'Constraint',cls:'constraint',maxPts:7, pass:/\b(under|fewer|limit|max|only|exactly|at most|no more than|must not|avoid|without)\b/i.test(v), tip:'Add constraints — e.g. "under 100 words" or "avoid jargon"'},
+    {label:'Context', cls:'context',    maxPts:5,  pass:/\b(context|background|situation|audience|scenario|purpose|goal)\b/i.test(v), tip:'Give background — e.g. "The audience is first-year college students"'},
+  ];
 
-  document.getElementById('sbResponseText').innerHTML = foundHtml + missingHtml;
-  document.getElementById('sbTips').innerHTML=`<div style="font-size:12px;color:var(--muted);margin-top:8px">Offline analysis — no AI run used. Send to AI for a full response and detailed feedback.</div>`;
-  if(score>=70)addXP(10,'Sandbox Practice (offline)');
+  // Length pts
+  const lenPts = (v.length>150?35:v.length>80?25:v.length>30?15:0);
+  const lenLabel = v.length>150?'Rich (150+ chars)':v.length>80?'Good (80+ chars)':v.length>30?'Short (30+ chars)':'Too short';
+
+  // Dissection tag row
+  const tags = dissectChecks.map(d=>`<span class="dtag ${d.pass?d.cls:''}" style="${d.pass?'':'background:var(--bg2);color:var(--muted);border:1px solid var(--border);opacity:.6'}">${d.label}${d.pass?' ✓':''}</span>`).join('');
+  const dissectHtml = `<div style="margin-bottom:8px;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Prompt Dissection</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">${tags}</div>`;
+
+  // Score breakdown bars
+  const rubricRows = [
+    {label:'Length',     earned:lenPts,                                     max:35, note:lenLabel},
+    {label:'Role',       earned:dissectChecks[0].pass?15:0,                  max:15},
+    {label:'Clarity',    earned:Math.round(Math.min(v.length/5,15)),         max:15},
+    {label:'Specificity',earned:Math.round(Math.min(v.length/10,20)),        max:20},
+    {label:'Format',     earned:dissectChecks[1].pass?10:0,                  max:10},
+    {label:'Tone',       earned:dissectChecks[2].pass?8:0,                   max:8},
+    {label:'Constraint', earned:dissectChecks[3].pass?7:0,                   max:7},
+    {label:'Context',    earned:dissectChecks[4].pass?5:0,                   max:5},
+  ];
+  const breakdownRows = rubricRows.map(r=>{
+    const pct = Math.round((r.earned/r.max)*100);
+    return `<div class="ob-row"><span class="ob-label">${r.label}</span><div class="ob-track"><div class="ob-fill${r.earned===0?' zero':''}" style="width:${pct}%"></div></div><span class="ob-pts">${r.earned}/${r.max}</span></div>`;
+  }).join('');
+  const breakdownHtml = `<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Score Breakdown</div><div class="offline-breakdown">${breakdownRows}</div>`;
+
+  // Improvement tips for missing components
+  const needWork = dissectChecks.filter(d=>!d.pass);
+  const tipsHtml = needWork.length
+    ? `<div style="margin-top:18px;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">What to Add</div>${needWork.map(d=>`<div style="margin-bottom:8px;padding:9px 13px;border-radius:9px;background:var(--bg);border-left:3px solid var(--orange);font-size:13px;color:var(--text2)">${d.tip}</div>`).join('')}`
+    : `<div style="margin-top:16px;padding:10px 14px;border-radius:9px;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent-text);font-size:13px;font-weight:700">Your prompt hits all five components — great structure!</div>`;
+
+  document.getElementById('sbResponseText').innerHTML = dissectHtml + breakdownHtml + tipsHtml;
+  document.getElementById('sbTips').innerHTML = '';
+  if(score>=75)addXP(10,'Sandbox Practice (offline)');
 }
 
 async function runHomeSandbox(){
@@ -1413,12 +1805,21 @@ async function runDissect(text){
 
 // ── Library ──────────────────────────────────────────────
 let activeFilter='All';
-function renderLibrary(){
+async function renderLibrary(){
+  // Fetch published community prompts and prepend to LIBRARY (dedupe by id)
+  try{
+    const res=await fetch('/api/library');
+    if(res.ok){
+      const community=await res.json();
+      community.forEach(p=>{
+        if(!LIBRARY.find(l=>l.id===p.id)) LIBRARY.unshift(p);
+      });
+    }
+  }catch(e){}
   const cats=['All',...new Set(LIBRARY.map(p=>p.cat))];
   const filterRow=document.getElementById('filterRow');
-  if(!filterRow.children.length){
-    cats.forEach(c=>{const btn=document.createElement('button');btn.className='filter-btn'+(c==='All'?' active':'');btn.textContent=c;btn.onclick=()=>{activeFilter=c;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filterLibrary();};filterRow.appendChild(btn);});
-  }
+  filterRow.innerHTML='';
+  cats.forEach(c=>{const btn=document.createElement('button');btn.className='filter-btn'+(c==='All'?' active':'');btn.textContent=c;btn.onclick=()=>{activeFilter=c;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filterLibrary();};filterRow.appendChild(btn);});
   filterLibrary();
 }
 function filterLibrary(){
@@ -1431,6 +1832,46 @@ function filterLibrary(){
     c.innerHTML=`<div class="pc-top"><span class="pc-category">${p.cat}</span><button class="pc-copy" onclick="copyPrompt('${p.id}',this)" title="Copy">${copySvg}</button></div><div class="pc-title">${p.title}</div><div class="pc-text">${p.prompt.substring(0,120)}${p.prompt.length>120?'...':''}</div><div class="pc-meta"><span class="pc-score">Score: ${p.score}/100</span><span>·</span><span>${p.uses.toLocaleString()} uses</span><button class="potd-try" onclick="useInSandbox('${p.id}')" style="margin-left:auto;font-size:11px">Try in Sandbox →</button></div>`;
     cards.appendChild(c);
   });
+}
+function copyTemplate(){
+  const checkSvg=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const copySvg=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  navigator.clipboard.writeText(_sbTemplate).then(()=>{
+    const btn=document.getElementById('tmplCopyBtn');
+    if(!btn)return;
+    btn.innerHTML=checkSvg;
+    setTimeout(()=>btn.innerHTML=copySvg,1500);
+  });
+}
+
+function togglePublishForm(){
+  const form=document.getElementById('publishForm');
+  if(form) form.classList.toggle('open');
+}
+
+async function submitPublish(){
+  const promptText = _sbPromptText;
+  const score = _sbPromptScore;
+  const title=(document.getElementById('pubTitle').value||'').trim();
+  const category=document.getElementById('pubCategory').value;
+  const errEl=document.getElementById('pubError');
+  errEl.textContent='';
+  if(!title){errEl.textContent='Please add a title for your prompt.';return;}
+  const token=getToken();
+  if(!token){openAuth('signup');return;}
+  const btn=document.querySelector('#publishForm .btn-send');
+  if(btn){btn.disabled=true;btn.textContent='Publishing…';}
+  try{
+    const res=await fetch('/api/library',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({prompt:promptText,title,category,score})});
+    const data=await res.json();
+    if(!res.ok){errEl.textContent=data.error||'Could not publish.';return;}
+    // Add to in-memory library so it shows up immediately
+    LIBRARY.unshift({id:data.entry.id,cat:data.entry.cat,title:data.entry.title,score:data.entry.score,uses:0,prompt:data.entry.prompt,publishedBy:data.entry.publishedBy});
+    document.getElementById('sbPublishArea').innerHTML=`<div style="margin-top:12px;padding:10px 14px;border-radius:10px;background:var(--accent-bg);border:1px solid var(--accent-border);color:var(--accent-text);font-size:13px;font-weight:700">Published to the Community Library!</div>`;
+  }catch(e){
+    errEl.textContent='Could not connect to server.';
+  }
+  if(btn){btn.disabled=false;btn.textContent='Publish →';}
 }
 function copyPrompt(id,btn){
   const p=LIBRARY.find(x=>x.id===id);if(!p)return;

@@ -7,6 +7,7 @@ import { JSONFile } from 'lowdb/node';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { readFileSync } from 'fs';
+import Anthropic from '@anthropic-ai/sdk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,19 +23,16 @@ function loadEnv() {
 }
 loadEnv();
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET || 'promptcraft-secret-change-me';
-const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
-function geminiUrl(model) {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-}
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const FREE_RUN_LIMIT = 10;
 const PRO_RUN_LIMIT = 140;
 
 // ── Database ──────────────────────────────────────────────────────────────
 const adapter = new JSONFile(path.join(__dirname, 'db.json'));
-const db = new Low(adapter, { users: [] });
+const db = new Low(adapter, { users: [], communityPrompts: [] });
 await db.read();
+if (!db.data.communityPrompts) db.data.communityPrompts = [];
 
 // ── Express setup ─────────────────────────────────────────────────────────
 const app = express();
@@ -142,7 +140,7 @@ app.put('/api/me/plan', requireAuth, async (req, res) => {
   res.json({ plan: user.plan, sbRunsThisMonth: user.sbRunsThisMonth, limit });
 });
 
-// POST /api/sandbox/run  — proxy to Gemini + enforce monthly limit
+// POST /api/sandbox/run  — proxy to Claude + enforce monthly limit
 app.post('/api/sandbox/run', requireAuth, async (req, res) => {
   const user = getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
@@ -158,33 +156,24 @@ app.post('/api/sandbox/run', requireAuth, async (req, res) => {
   if (!systemPrompt || !userText) return res.status(400).json({ error: 'systemPrompt and userText are required' });
 
   try {
-    let text;
-    for (const model of GEMINI_MODELS) {
-      const geminiRes = await fetch(geminiUrl(model), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: systemPrompt + '\n\n' + userText }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 8192, responseMimeType: 'application/json' }
-        })
-      });
-      if (geminiRes.status === 429) continue;
-      if (!geminiRes.ok) throw new Error('Gemini error: ' + geminiRes.status);
-      const data = await geminiRes.json();
-      text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) break;
-    }
-    if (!text) throw new Error('All models quota exceeded or returned empty');
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 8096,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userText }],
+    });
+    const text = message.content[0]?.text;
+    if (!text) throw new Error('Empty response from Claude');
 
     user.sbRunsThisMonth++;
     await db.write();
     res.json({ result: text, sbRunsThisMonth: user.sbRunsThisMonth, limit });
   } catch (err) {
-    res.status(502).json({ error: 'Gemini request failed: ' + err.message });
+    res.status(502).json({ error: 'Claude request failed: ' + err.message });
   }
 });
 
-// POST /api/sandbox/dissect  — proxy to Gemini to dissect a prompt
+// POST /api/sandbox/dissect  — proxy to Claude to dissect a prompt
 app.post('/api/sandbox/dissect', requireAuth, async (req, res) => {
   const user = getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
@@ -215,37 +204,80 @@ Example valid output format:
 If none of these are strongly clear, return an empty object {}.`;
 
   try {
-    let text;
-    for (const model of GEMINI_MODELS) {
-      const geminiRes = await fetch(geminiUrl(model), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: systemPrompt + '\n\nPrompt to dissect: ' + userText }] }],
-          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
-        })
-      });
-      if (geminiRes.status === 429) continue;
-      if (!geminiRes.ok) throw new Error('Gemini error: ' + geminiRes.status);
-      const data = await geminiRes.json();
-      text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) break;
-    }
-    if (!text) throw new Error('All models quota exceeded or returned empty');
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: 'Prompt to dissect: ' + userText }],
+    });
+    const text = message.content[0]?.text;
+    if (!text) throw new Error('Empty response from Claude');
 
     let parsed;
     try {
-      parsed = JSON.parse(text);
+      const match = text.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(match ? match[0] : text);
     } catch(e) {
-      throw new Error('Gemini did not return valid JSON');
+      throw new Error('Claude did not return valid JSON');
     }
 
     user.sbRunsThisMonth++;
     await db.write();
     res.json({ result: parsed, sbRunsThisMonth: user.sbRunsThisMonth, limit });
   } catch (err) {
-    res.status(502).json({ error: 'Gemini request failed: ' + err.message });
+    res.status(502).json({ error: 'Claude request failed: ' + err.message });
   }
+});
+
+// ── Content filter ────────────────────────────────────────────────────────
+const BLOCKED_TERMS = [
+  // Violence / harm
+  'kill','murder','rape','suicide','bomb','terrorist','weapon','shoot','stab','attack',
+  // Hate / slurs (abbreviated to avoid listing them here)
+  'nazi','genocide','slur',
+  // Sexual / explicit
+  'porn','nude','naked','sex','explicit','nsfw','erotic','fetish','masturbat',
+  // Personal data / scams
+  'social security','credit card','phishing','scam','hack','malware','password',
+  // Drugs
+  'cocaine','heroin','meth','fentanyl','drug deal',
+];
+function isAppropriate(text) {
+  const lower = text.toLowerCase();
+  return !BLOCKED_TERMS.some(term => lower.includes(term));
+}
+
+// GET /api/library — public community prompts
+app.get('/api/library', (req, res) => {
+  res.json(db.data.communityPrompts);
+});
+
+// POST /api/library — publish a prompt (pro only, score > 90, content filter)
+app.post('/api/library', requireAuth, async (req, res) => {
+  const user = getUser(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (user.plan !== 'pro') return res.status(403).json({ error: 'Pro plan required to publish prompts' });
+
+  const { prompt, title, category, score } = req.body;
+  if (!prompt || !title || !category) return res.status(400).json({ error: 'prompt, title, and category are required' });
+  if (!score || score < 90) return res.status(400).json({ error: 'Only prompts scoring 90 or above can be published' });
+  if (!isAppropriate(prompt) || !isAppropriate(title)) {
+    return res.status(422).json({ error: 'Prompt contains inappropriate content and cannot be published' });
+  }
+
+  const entry = {
+    id: 'u_' + crypto.randomUUID(),
+    cat: category,
+    title: title.trim().substring(0, 80),
+    prompt: prompt.trim(),
+    score,
+    uses: 0,
+    publishedBy: user.name,
+    publishedAt: new Date().toISOString(),
+  };
+  db.data.communityPrompts.unshift(entry);
+  await db.write();
+  res.json({ success: true, entry });
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────
