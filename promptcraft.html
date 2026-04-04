@@ -501,6 +501,54 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
 .cat-progress-bar{flex:1;height:3px;background:var(--border2);border-radius:2px;overflow:hidden}
 .cat-progress-fill{height:100%;background:var(--accent-text);border-radius:2px;transition:width .3s ease}
 .cat-progress{font-size:10px;color:var(--muted);white-space:nowrap}
+/* ── Settings modal ── */
+.settings-modal{background:var(--surface);border:1px solid var(--border);border-radius:24px;width:100%;max-width:640px;max-height:82vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);transform:translateY(10px);transition:transform .2s}
+.auth-overlay.open .settings-modal{transform:translateY(0)}
+.settings-head{display:flex;align-items:center;justify-content:space-between;padding:24px 28px 16px;border-bottom:1px solid var(--border)}
+.settings-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+.settings-close{width:30px;height:30px;border-radius:50%;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s;font-family:sans-serif}
+.settings-close:hover{border-color:var(--text2);color:var(--text)}
+.settings-body{display:flex;flex:1;overflow:hidden;min-height:0}
+.settings-nav{width:152px;flex-shrink:0;padding:12px 8px;display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--border)}
+.settings-nav-btn{width:100%;text-align:left;padding:9px 14px;border:none;border-radius:10px;background:transparent;color:var(--text2);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,color .15s}
+.settings-nav-btn:hover{background:var(--bg2);color:var(--text)}
+.settings-nav-btn.active{background:var(--accent-bg);color:var(--accent-text)}
+[data-theme="dark"] .settings-nav-btn.active{color:var(--accent)}
+.settings-content{flex:1;overflow-y:auto;padding:20px 24px}
+.settings-section{display:none}
+.settings-section.active{display:block}
+.settings-section-title{font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.settings-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border-bottom:none}
+.settings-row-info{flex:1}
+.settings-row-label{font-size:14px;font-weight:700;color:var(--text);line-height:1}
+.settings-row-sub{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
+.settings-row-action{flex-shrink:0;display:flex;align-items:center;gap:8px}
+.settings-input{padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border .15s;width:180px}
+.settings-input:focus{border-color:var(--accent-text)}
+[data-theme="dark"] .settings-input:focus{border-color:var(--accent)}
+.settings-btn{padding:8px 16px;border-radius:40px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s,color .15s;white-space:nowrap}
+.settings-btn:hover{border-color:var(--accent-text);color:var(--accent-text);background:var(--accent-bg)}
+.settings-btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.settings-btn.primary:hover{opacity:.85}
+.settings-btn.danger{border-color:var(--red);color:var(--red)}
+.settings-btn.danger:hover{background:rgba(239,68,68,.08)}
+.settings-feedback{font-size:12px;margin-top:6px;min-height:16px}
+.settings-feedback.ok{color:var(--green,#22c55e)}
+.settings-feedback.err{color:var(--red)}
+/* Theme picker */
+.theme-picker{display:flex;gap:6px}
+.theme-opt{padding:7px 14px;border-radius:40px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.theme-opt:hover{border-color:var(--accent-text);color:var(--accent-text)}
+.theme-opt.active{border-color:var(--accent-text);background:var(--accent-bg);color:var(--accent-text)}
+[data-theme="dark"] .theme-opt.active{border-color:var(--accent);color:var(--accent);background:rgba(139,92,246,.15)}
+/* Usage bar */
+.usage-bar-wrap{width:140px}
+.usage-bar-track{height:6px;background:var(--border2);border-radius:3px;overflow:hidden;margin-top:6px}
+.usage-bar-fill{height:100%;background:var(--accent-text);border-radius:3px;transition:width .3s}
+.usage-bar-fill.warn{background:#f59e0b}
+.usage-bar-fill.full{background:var(--red)}
+.settings-divider{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:20px 0 8px;padding-top:12px;border-top:1px solid var(--border)}
 </style>
 </head>
 <body>
@@ -552,6 +600,163 @@ footer{border-top:1px solid var(--border);padding:48px;display:grid;grid-templat
       <div class="auth-field"><label>Password</label><input type="password" id="loginPassword" placeholder="Your password" autocomplete="current-password"></div>
       <button class="btn-auth" onclick="handleLogin()">Log In</button>
       <div class="auth-error" id="loginError"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="auth-overlay" id="settingsModal">
+  <div class="settings-modal">
+    <div class="settings-head">
+      <span class="settings-title">Settings</span>
+      <button class="settings-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="settings-body">
+      <nav class="settings-nav">
+        <button class="settings-nav-btn active" onclick="showSettingsSection('profile',this)">Profile</button>
+        <button class="settings-nav-btn" onclick="showSettingsSection('appearance',this)">Appearance</button>
+        <button class="settings-nav-btn" onclick="showSettingsSection('plan',this)">Plan & Usage</button>
+        <button class="settings-nav-btn" onclick="showSettingsSection('security',this)">Security</button>
+        <button class="settings-nav-btn" onclick="showSettingsSection('data',this)">Data</button>
+      </nav>
+      <div class="settings-content">
+
+        <!-- Profile -->
+        <div class="settings-section active" id="sec-profile">
+          <div class="settings-section-title">Profile</div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Display Name</div>
+              <div class="settings-row-sub">Shown on the leaderboard and community library</div>
+            </div>
+            <div class="settings-row-action" style="flex-direction:column;align-items:flex-end">
+              <div style="display:flex;gap:8px">
+                <input class="settings-input" id="settingsName" placeholder="Your name" style="width:140px">
+                <button class="settings-btn primary" onclick="saveProfileName()">Save</button>
+              </div>
+              <div class="settings-feedback" id="nameFeedback"></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Email</div>
+              <div class="settings-row-sub">Used for login — cannot be changed</div>
+            </div>
+            <div class="settings-row-action">
+              <span style="font-size:13px;color:var(--muted)" id="settingsEmail"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="settings-section" id="sec-appearance">
+          <div class="settings-section-title">Appearance</div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Theme</div>
+              <div class="settings-row-sub">Light, Dark, or follow your system setting</div>
+            </div>
+            <div class="settings-row-action">
+              <div class="theme-picker">
+                <button class="theme-opt" data-t="light" onclick="setThemePref('light')">Light</button>
+                <button class="theme-opt" data-t="dark" onclick="setThemePref('dark')">Dark</button>
+                <button class="theme-opt" data-t="system" onclick="setThemePref('system')">System</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plan & Usage -->
+        <div class="settings-section" id="sec-plan">
+          <div class="settings-section-title">Plan & Usage</div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Current Plan</div>
+              <div class="settings-row-sub" id="planDesc">Free — 10 AI sandbox runs/month</div>
+            </div>
+            <div class="settings-row-action">
+              <span id="planBadge" style="font-size:12px;font-weight:800;padding:4px 10px;border-radius:40px;background:var(--bg2);color:var(--text2)">FREE</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Sandbox Runs</div>
+              <div class="settings-row-sub" id="usageSub">0 of 10 used this month</div>
+            </div>
+            <div class="settings-row-action">
+              <div class="usage-bar-wrap">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
+                  <span id="usageNum">0</span><span id="usageLimit">10</span>
+                </div>
+                <div class="usage-bar-track"><div class="usage-bar-fill" id="usageBarFill" style="width:0%"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Switch Plan</div>
+              <div class="settings-row-sub">Pro unlocks all tiers, 140 runs/month, and AI grading</div>
+            </div>
+            <div class="settings-row-action">
+              <select id="settingsPlanSelect" onchange="settingsSwitchPlan(this.value)" style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer">
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security -->
+        <div class="settings-section" id="sec-security">
+          <div class="settings-section-title">Security</div>
+          <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:12px">
+            <div class="settings-row-label">Change Password</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <input class="settings-input" type="password" id="currentPw" placeholder="Current password" style="width:100%">
+              <input class="settings-input" type="password" id="newPw" placeholder="New password (min 6 chars)" style="width:100%">
+              <input class="settings-input" type="password" id="confirmPw" placeholder="Confirm new password" style="width:100%">
+              <div style="display:flex;align-items:center;gap:12px">
+                <button class="settings-btn primary" onclick="savePassword()">Update Password</button>
+                <div class="settings-feedback" id="pwFeedback"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data -->
+        <div class="settings-section" id="sec-data">
+          <div class="settings-section-title">Data</div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Learning Progress</div>
+              <div class="settings-row-sub">Resets all completed lessons, missions, and XP</div>
+            </div>
+            <div class="settings-row-action">
+              <button class="settings-btn danger" onclick="confirmResetProgress()">Reset Progress</button>
+            </div>
+          </div>
+          <div class="settings-divider">Account</div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label">Sign Out</div>
+              <div class="settings-row-sub">You can sign back in any time</div>
+            </div>
+            <div class="settings-row-action">
+              <button class="settings-btn" onclick="handleSignout();closeSettings()">Sign Out</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <div class="settings-row-label" style="color:var(--red)">Delete Account</div>
+              <div class="settings-row-sub">Permanently removes your account and all data</div>
+            </div>
+            <div class="settings-row-action">
+              <button class="settings-btn danger" onclick="confirmDeleteAccount()">Delete Account</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 </div>
@@ -900,7 +1105,7 @@ function updateNavAuth(){
     const isPro = authUser.plan === 'pro';
     const limit = isPro ? 140 : FREE_LIMIT;
     const planLabel = isPro ? ' <span style="font-size:10px;color:var(--accent-text);font-weight:800">PRO</span>' : '';
-    area.innerHTML = `<div class="nav-avatar" title="${authUser.name}" onclick="toggleAvatarMenu(event)">${initials}<div class="nav-avatar-menu" onclick="event.stopPropagation()"><div style="padding:8px 14px;font-size:12px;color:var(--muted);font-weight:700">${authUser.name}${planLabel}</div><div style="padding:2px 14px 8px;font-size:11px;color:var(--muted)">${runs}/${limit} sandbox runs</div><div class="plan-toggle"><span>Plan:</span><select onchange="switchPlan(this.value)"><option value="free"${!isPro?' selected':''}>Free</option><option value="pro"${isPro?' selected':''}>Pro</option></select></div><button onclick="handleSignout()">Sign Out</button></div></div>`;
+    area.innerHTML = `<div class="nav-avatar" title="${authUser.name}" onclick="toggleAvatarMenu(event)">${initials}<div class="nav-avatar-menu" onclick="event.stopPropagation()"><div style="padding:8px 14px 4px;font-size:12px;color:var(--muted);font-weight:700">${authUser.name}${planLabel}</div><div style="padding:2px 14px 8px;font-size:11px;color:var(--muted)">${runs}/${limit} sandbox runs</div><hr style="border:none;border-top:1px solid var(--border);margin:4px 8px"><button onclick="openSettings()">Settings</button><button onclick="handleSignout()">Sign Out</button></div></div>`;
   } else {
     area.innerHTML = '<button class="btn-nav" onclick="openAuth()">Sign In</button>';
   }
@@ -2577,8 +2782,133 @@ function tryPotd(){
 
 // ── Theme ─────────────────────────────────────────────────
 const html=document.documentElement;
-if(window.matchMedia('(prefers-color-scheme: dark)').matches)html.setAttribute('data-theme','dark');
-document.getElementById('themeBtn').addEventListener('click',()=>{html.setAttribute('data-theme',html.getAttribute('data-theme')==='dark'?'light':'dark');});
+function applyTheme(pref){
+  if(pref==='system'){
+    html.setAttribute('data-theme',window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  } else {
+    html.setAttribute('data-theme',pref);
+  }
+  const icons={light:'☀',dark:'☾',system:'◑'};
+  const btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=icons[pref]||'◑';
+  document.querySelectorAll('.theme-opt').forEach(b=>b.classList.toggle('active',b.dataset.t===pref));
+}
+function setThemePref(pref){
+  localStorage.setItem('theme_pref',pref);
+  applyTheme(pref);
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
+  if((localStorage.getItem('theme_pref')||'system')==='system')applyTheme('system');
+});
+const _savedTheme=localStorage.getItem('theme_pref')||'system';
+applyTheme(_savedTheme);
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  const cur=localStorage.getItem('theme_pref')||'system';
+  setThemePref(cur==='light'?'dark':cur==='dark'?'system':'light');
+});
+
+// ── Settings ──────────────────────────────────────────────
+function openSettings(){
+  document.querySelectorAll('.nav-avatar-menu.open').forEach(m=>m.classList.remove('open'));
+  // Populate fields
+  if(authUser){
+    document.getElementById('settingsName').value=authUser.name||'';
+    document.getElementById('settingsEmail').textContent=authUser.email||'';
+    const isPro=authUser.plan==='pro';
+    const limit=isPro?140:FREE_LIMIT;
+    const runs=authUser.sbRunsThisMonth||0;
+    const pct=Math.min(100,Math.round((runs/limit)*100));
+    document.getElementById('planDesc').textContent=isPro?'Pro — 140 AI sandbox runs/month':'Free — 10 AI sandbox runs/month';
+    document.getElementById('planBadge').textContent=isPro?'PRO':'FREE';
+    document.getElementById('planBadge').style.background=isPro?'var(--accent-bg)':'var(--bg2)';
+    document.getElementById('planBadge').style.color=isPro?'var(--accent-text)':'var(--text2)';
+    document.getElementById('usageSub').textContent=`${runs} of ${limit} used this month`;
+    document.getElementById('usageNum').textContent=runs;
+    document.getElementById('usageLimit').textContent=limit;
+    const fill=document.getElementById('usageBarFill');
+    fill.style.width=pct+'%';
+    fill.className='usage-bar-fill'+(pct>=100?' full':pct>=80?' warn':'');
+    const sel=document.getElementById('settingsPlanSelect');
+    if(sel)sel.value=authUser.plan;
+  }
+  // Sync theme picker
+  const cur=localStorage.getItem('theme_pref')||'system';
+  document.querySelectorAll('.theme-opt').forEach(b=>b.classList.toggle('active',b.dataset.t===cur));
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings(){
+  document.getElementById('settingsModal').classList.remove('open');
+}
+document.getElementById('settingsModal').addEventListener('click',function(e){if(e.target===this)closeSettings();});
+
+function showSettingsSection(id,btn){
+  document.querySelectorAll('.settings-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.settings-nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+
+async function saveProfileName(){
+  const name=document.getElementById('settingsName').value.trim();
+  const fb=document.getElementById('nameFeedback');
+  fb.className='settings-feedback';fb.textContent='';
+  if(!name){fb.className='settings-feedback err';fb.textContent='Name cannot be empty.';return;}
+  try{
+    const res=await fetch('/api/me/profile',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({name})});
+    const data=await res.json();
+    if(!res.ok){fb.className='settings-feedback err';fb.textContent=data.error||'Failed.';return;}
+    authUser.name=data.name;
+    updateNavAuth();
+    fb.className='settings-feedback ok';fb.textContent='Saved!';
+    setTimeout(()=>{fb.textContent='';},2500);
+  }catch(e){fb.className='settings-feedback err';fb.textContent='Could not connect.';}
+}
+
+async function savePassword(){
+  const cur=document.getElementById('currentPw').value;
+  const nw=document.getElementById('newPw').value;
+  const cf=document.getElementById('confirmPw').value;
+  const fb=document.getElementById('pwFeedback');
+  fb.className='settings-feedback';fb.textContent='';
+  if(!cur||!nw||!cf){fb.className='settings-feedback err';fb.textContent='All fields required.';return;}
+  if(nw!==cf){fb.className='settings-feedback err';fb.textContent='Passwords do not match.';return;}
+  if(nw.length<6){fb.className='settings-feedback err';fb.textContent='Min 6 characters.';return;}
+  try{
+    const res=await fetch('/api/me/profile',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({currentPassword:cur,newPassword:nw})});
+    const data=await res.json();
+    if(!res.ok){fb.className='settings-feedback err';fb.textContent=data.error||'Failed.';return;}
+    document.getElementById('currentPw').value='';
+    document.getElementById('newPw').value='';
+    document.getElementById('confirmPw').value='';
+    fb.className='settings-feedback ok';fb.textContent='Password updated!';
+    setTimeout(()=>{fb.textContent='';},2500);
+  }catch(e){fb.className='settings-feedback err';fb.textContent='Could not connect.';}
+}
+
+async function settingsSwitchPlan(val){
+  await switchPlan(val);
+  openSettings(); // re-render usage numbers
+}
+
+function confirmResetProgress(){
+  if(!confirm('Reset all learning progress? This will clear your XP, completed lessons, and passed missions. This cannot be undone.'))return;
+  state.xp=0;state.streak=1;state.completedLessons=[];state.passedMissions=[];
+  save();
+  if(authUser){
+    fetch('/api/me/progress',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({xp:0,streak:1,completedLessons:[],passedMissions:[]})});
+  }
+  renderLearn();
+  closeSettings();
+}
+
+function confirmDeleteAccount(){
+  if(!confirm('Permanently delete your account and all data? This cannot be undone.'))return;
+  if(!confirm('Are you absolutely sure?'))return;
+  handleSignout();
+  closeSettings();
+  // Note: full server-side deletion would need an additional API endpoint
+  alert('Account signed out. Contact support to complete deletion.');
+}
 
 // ── Auth modal close on overlay click ─────────────────────
 document.getElementById('authModal').addEventListener('click',function(e){if(e.target===this)closeAuth();});
