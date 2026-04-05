@@ -2,17 +2,17 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
+import pkg from 'pg';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { readFileSync } from 'fs';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 
+const { Pool } = pkg;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ── Load .env manually (no dotenv needed for simple case) ─────────────────
+// ── Load .env manually ────────────────────────────────────────────────────
 function loadEnv() {
   try {
     const env = readFileSync(path.join(__dirname, '.env'), 'utf8');
@@ -30,22 +30,168 @@ const FREE_RUN_LIMIT = 10;
 const PRO_RUN_LIMIT = 140;
 
 // ── Database ──────────────────────────────────────────────────────────────
-const adapter = new JSONFile(path.join(__dirname, 'db.json'));
-const db = new Low(adapter, { users: [], communityPrompts: [] });
-await db.read();
-if (!db.data.communityPrompts) db.data.communityPrompts = [];
-if (!db.data.teams) db.data.teams = [];
-if (!db.data.teamMembers) db.data.teamMembers = [];
-if (!db.data.teamInvites) db.data.teamInvites = [];
-if (!db.data.teamPrompts) db.data.teamPrompts = [];
-if (!db.data.certificates) db.data.certificates = [];
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
+async function query(sql, params = []) {
+  const client = await pool.connect();
+  try { return await client.query(sql, params); }
+  finally { client.release(); }
+}
+
+async function queryOne(sql, params = []) {
+  const res = await query(sql, params);
+  return res.rows[0] || null;
+}
+
+// Create tables on startup
+await query(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT,
+    plan TEXT NOT NULL DEFAULT 'free',
+    sb_runs_this_month INT NOT NULL DEFAULT 0,
+    sb_reset_month TEXT NOT NULL DEFAULT '',
+    xp INT NOT NULL DEFAULT 0,
+    streak INT NOT NULL DEFAULT 1,
+    last_visit TEXT NOT NULL DEFAULT '',
+    completed_lessons JSONB NOT NULL DEFAULT '[]',
+    passed_missions JSONB NOT NULL DEFAULT '[]',
+    team_id TEXT,
+    team_role TEXT
+  );
+  CREATE TABLE IF NOT EXISTS community_prompts (
+    id TEXT PRIMARY KEY,
+    cat TEXT NOT NULL,
+    title TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    score INT NOT NULL,
+    uses INT NOT NULL DEFAULT 0,
+    published_by TEXT NOT NULL,
+    published_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS teams (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    owner_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    settings JSONB NOT NULL DEFAULT '{}',
+    assigned_categories JSONB NOT NULL DEFAULT '{}'
+  );
+  CREATE TABLE IF NOT EXISTS team_members (
+    id TEXT PRIMARY KEY,
+    team_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    joined_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS team_invites (
+    id TEXT PRIMARY KEY,
+    team_id TEXT NOT NULL,
+    token TEXT UNIQUE NOT NULL,
+    created_by TEXT NOT NULL,
+    label TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_by TEXT,
+    used_at TEXT
+  );
+  CREATE TABLE IF NOT EXISTS team_prompts (
+    id TEXT PRIMARY KEY,
+    team_id TEXT NOT NULL,
+    submitted_by TEXT NOT NULL,
+    published_by TEXT NOT NULL,
+    title TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    category TEXT NOT NULL,
+    score INT NOT NULL,
+    status TEXT NOT NULL,
+    reviewed_by TEXT,
+    reviewed_at TEXT,
+    submitted_at TEXT NOT NULL,
+    uses INT NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS certificates (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    team_id TEXT,
+    type TEXT NOT NULL,
+    category_id TEXT,
+    category_name TEXT,
+    earned_at TEXT NOT NULL
+  );
+`);
+
+// ── Row mappers ───────────────────────────────────────────────────────────
+function rowToUser(row) {
+  if (!row) return null;
+  return {
+    id: row.id, name: row.name, email: row.email, passwordHash: row.password_hash,
+    plan: row.plan, sbRunsThisMonth: row.sb_runs_this_month, sbResetMonth: row.sb_reset_month,
+    xp: row.xp, streak: row.streak, lastVisit: row.last_visit,
+    completedLessons: row.completed_lessons || [],
+    passedMissions: row.passed_missions || [],
+    teamId: row.team_id || null, teamRole: row.team_role || null,
+  };
+}
+
+function publicUser(u) {
+  return {
+    id: u.id, name: u.name, email: u.email, plan: u.plan,
+    sbRunsThisMonth: u.sbRunsThisMonth, xp: u.xp, streak: u.streak,
+    lastVisit: u.lastVisit, completedLessons: u.completedLessons,
+    passedMissions: u.passedMissions, teamId: u.teamId || null, teamRole: u.teamRole || null,
+  };
+}
+
+function rowToTeam(row) {
+  if (!row) return null;
+  return {
+    id: row.id, name: row.name, ownerId: row.owner_id, createdAt: row.created_at,
+    settings: row.settings || {}, assignedCategories: row.assigned_categories || {},
+  };
+}
+
+function rowToMember(row) {
+  if (!row) return null;
+  return { id: row.id, teamId: row.team_id, userId: row.user_id, role: row.role, joinedAt: row.joined_at };
+}
+
+function rowToInvite(row) {
+  if (!row) return null;
+  return {
+    id: row.id, teamId: row.team_id, token: row.token, createdBy: row.created_by,
+    label: row.label, createdAt: row.created_at, expiresAt: row.expires_at,
+    usedBy: row.used_by, usedAt: row.used_at,
+  };
+}
+
+function rowToPrompt(row) {
+  if (!row) return null;
+  return {
+    id: row.id, teamId: row.team_id, submittedBy: row.submitted_by, publishedBy: row.published_by,
+    title: row.title, prompt: row.prompt, category: row.category, score: row.score,
+    status: row.status, reviewedBy: row.reviewed_by, reviewedAt: row.reviewed_at,
+    submittedAt: row.submitted_at, uses: row.uses,
+  };
+}
+
+function rowToCert(row) {
+  if (!row) return null;
+  return {
+    id: row.id, userId: row.user_id, teamId: row.team_id, type: row.type,
+    categoryId: row.category_id, categoryName: row.category_name, earnedAt: row.earned_at,
+  };
+}
 
 // ── Express setup ─────────────────────────────────────────────────────────
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-// Serve promptcraft.html at the root and as a static fallback
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'promptcraft.html')));
 app.use(express.static(__dirname));
 
@@ -61,29 +207,38 @@ function requireAuth(req, res, next) {
   }
 }
 
-function getUser(id) {
-  return db.data.users.find(u => u.id === id);
+async function getUser(id) {
+  const row = await queryOne('SELECT * FROM users WHERE id = $1', [id]);
+  return rowToUser(row);
 }
 
 function requireTeamRole(...roles) {
-  return (req, res, next) => {
-    const user = getUser(req.user.id);
-    if (!user?.teamId) return res.status(403).json({ error: 'Not a team member' });
-    if (req.params.teamId && user.teamId !== req.params.teamId)
-      return res.status(403).json({ error: 'Wrong team' });
-    const member = db.data.teamMembers.find(m => m.userId === user.id && m.teamId === user.teamId);
-    if (!member || !roles.includes(member.role))
-      return res.status(403).json({ error: 'Insufficient role' });
-    req.teamMember = member;
-    next();
+  return async (req, res, next) => {
+    try {
+      const user = await getUser(req.user.id);
+      if (!user?.teamId) return res.status(403).json({ error: 'Not a team member' });
+      if (req.params.teamId && user.teamId !== req.params.teamId)
+        return res.status(403).json({ error: 'Wrong team' });
+      const memberRow = await queryOne(
+        'SELECT * FROM team_members WHERE user_id = $1 AND team_id = $2',
+        [user.id, user.teamId]
+      );
+      if (!memberRow || !roles.includes(memberRow.role))
+        return res.status(403).json({ error: 'Insufficient role' });
+      req.teamMember = rowToMember(memberRow);
+      next();
+    } catch {
+      res.status(500).json({ error: 'Server error' });
+    }
   };
 }
 
 // ── Reset monthly runs if month changed ───────────────────────────────────
-function checkMonthReset(user) {
+async function checkMonthReset(user) {
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
   if (user.sbResetMonth !== monthKey) {
+    await query('UPDATE users SET sb_runs_this_month = 0, sb_reset_month = $1 WHERE id = $2', [monthKey, user.id]);
     user.sbRunsThisMonth = 0;
     user.sbResetMonth = monthKey;
   }
@@ -95,139 +250,137 @@ function checkMonthReset(user) {
 app.post('/api/signup', async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'All fields required' });
-  if (db.data.users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-    return res.status(409).json({ error: 'Email already registered' });
-  }
-  const id = crypto.randomUUID();
+  const existing = await queryOne('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+  if (existing) return res.status(409).json({ error: 'Email already registered' });
+  const id = randomUUID();
   const passwordHash = await bcrypt.hash(password, 10);
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
-  const user = { id, name, email: email.toLowerCase(), passwordHash, plan: 'free', sbRunsThisMonth: 0, sbResetMonth: monthKey, xp: 0, streak: 1, lastVisit: '', completedLessons: [], passedMissions: [], teamId: null, teamRole: null };
-  db.data.users.push(user);
-  await db.write();
+  await query(
+    `INSERT INTO users (id, name, email, password_hash, plan, sb_runs_this_month, sb_reset_month, xp, streak, last_visit, completed_lessons, passed_missions, team_id, team_role)
+     VALUES ($1,$2,$3,$4,'free',0,$5,0,1,'','[]','[]',NULL,NULL)`,
+    [id, name, email.toLowerCase(), passwordHash, monthKey]
+  );
+  const user = await getUser(id);
   const token = jwt.sign({ id, email: user.email, name }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, user: { id, name, email: user.email, plan: user.plan, sbRunsThisMonth: user.sbRunsThisMonth, xp: user.xp, streak: user.streak, lastVisit: user.lastVisit, completedLessons: user.completedLessons, passedMissions: user.passedMissions, teamId: user.teamId, teamRole: user.teamRole } });
+  res.json({ token, user: publicUser(user) });
 });
 
 // POST /api/login
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-  const user = db.data.users.find(u => u.email === email.toLowerCase());
-  if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+  const row = await queryOne('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
+  if (!row) return res.status(401).json({ error: 'Invalid email or password' });
+  const user = rowToUser(row);
+  if (!user.passwordHash) return res.status(401).json({ error: 'This account uses social login. Please sign in with Google or Microsoft.' });
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
-  checkMonthReset(user);
-  await db.write();
+  await checkMonthReset(user);
   const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '30d' });
-  res.json({ token, user: { id: user.id, name: user.name, email: user.email, plan: user.plan, sbRunsThisMonth: user.sbRunsThisMonth, xp: user.xp, streak: user.streak, lastVisit: user.lastVisit, completedLessons: user.completedLessons, passedMissions: user.passedMissions, teamId: user.teamId || null, teamRole: user.teamRole || null } });
+  res.json({ token, user: publicUser(user) });
 });
 
 // GET /api/me
 app.get('/api/me', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  checkMonthReset(user);
-  await db.write();
-  res.json({ id: user.id, name: user.name, email: user.email, plan: user.plan, sbRunsThisMonth: user.sbRunsThisMonth, xp: user.xp, streak: user.streak, lastVisit: user.lastVisit, completedLessons: user.completedLessons, passedMissions: user.passedMissions, teamId: user.teamId || null, teamRole: user.teamRole || null });
+  await checkMonthReset(user);
+  res.json(publicUser(user));
 });
 
 // PUT /api/me/progress
 app.put('/api/me/progress', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  
   const { xp, streak, lastVisit, completedLessons, passedMissions } = req.body;
-  if (xp !== undefined) user.xp = xp;
-  if (streak !== undefined) user.streak = streak;
-  if (lastVisit !== undefined) user.lastVisit = lastVisit;
-  if (completedLessons !== undefined) user.completedLessons = completedLessons;
-  if (passedMissions !== undefined) user.passedMissions = passedMissions;
-  
-  await db.write();
+  const updates = [];
+  const vals = [];
+  let i = 1;
+  if (xp !== undefined) { updates.push(`xp = $${i++}`); vals.push(xp); }
+  if (streak !== undefined) { updates.push(`streak = $${i++}`); vals.push(streak); }
+  if (lastVisit !== undefined) { updates.push(`last_visit = $${i++}`); vals.push(lastVisit); }
+  if (completedLessons !== undefined) { updates.push(`completed_lessons = $${i++}`); vals.push(JSON.stringify(completedLessons)); }
+  if (passedMissions !== undefined) { updates.push(`passed_missions = $${i++}`); vals.push(JSON.stringify(passedMissions)); }
+  if (updates.length) {
+    vals.push(req.user.id);
+    await query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${i}`, vals);
+  }
   res.json({ success: true });
 });
 
-// PUT /api/me/profile — update name and/or password
+// PUT /api/me/profile
 app.put('/api/me/profile', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   const { name, currentPassword, newPassword } = req.body;
+  const updates = [];
+  const vals = [];
+  let i = 1;
   if (name !== undefined) {
     if (!name.trim()) return res.status(400).json({ error: 'Name cannot be empty' });
-    user.name = name.trim();
+    updates.push(`name = $${i++}`); vals.push(name.trim());
   }
   if (newPassword) {
     if (!currentPassword) return res.status(400).json({ error: 'Current password required' });
+    if (!user.passwordHash) return res.status(400).json({ error: 'Cannot set password for social login accounts' });
     const match = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!match) return res.status(400).json({ error: 'Current password is incorrect' });
     if (newPassword.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    const hash = await bcrypt.hash(newPassword, 10);
+    updates.push(`password_hash = $${i++}`); vals.push(hash);
   }
-  await db.write();
-  res.json({ success: true, name: user.name });
+  if (updates.length) {
+    vals.push(req.user.id);
+    await query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${i}`, vals);
+  }
+  const updated = await getUser(req.user.id);
+  res.json({ success: true, name: updated.name });
 });
 
-// PUT /api/me/plan — toggle between free and pro (dev/demo toggle)
+// PUT /api/me/plan
 app.put('/api/me/plan', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
   const { plan } = req.body;
   if (plan !== 'free' && plan !== 'pro') return res.status(400).json({ error: 'Plan must be "free" or "pro"' });
-  user.plan = plan;
-  await db.write();
+  await query('UPDATE users SET plan = $1 WHERE id = $2', [plan, req.user.id]);
+  const user = await getUser(req.user.id);
   const limit = plan === 'pro' ? PRO_RUN_LIMIT : FREE_RUN_LIMIT;
   res.json({ plan: user.plan, sbRunsThisMonth: user.sbRunsThisMonth, limit });
 });
 
-// POST /api/sandbox/run  — proxy to Claude + enforce monthly limit
+// POST /api/sandbox/run
 app.post('/api/sandbox/run', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  checkMonthReset(user);
-
+  await checkMonthReset(user);
   const limit = user.plan === 'pro' ? PRO_RUN_LIMIT : FREE_RUN_LIMIT;
-  if (user.sbRunsThisMonth >= limit) {
-    await db.write();
+  if (user.sbRunsThisMonth >= limit)
     return res.status(429).json({ error: 'Monthly sandbox limit reached', limit, used: user.sbRunsThisMonth });
-  }
-
   const { systemPrompt, userText } = req.body;
   if (!systemPrompt || !userText) return res.status(400).json({ error: 'systemPrompt and userText are required' });
-
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 8096,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userText }],
+      model: 'claude-haiku-4-5-20251001', max_tokens: 8096,
+      system: systemPrompt, messages: [{ role: 'user', content: userText }],
     });
     const text = message.content[0]?.text;
     if (!text) throw new Error('Empty response from Claude');
-
-    user.sbRunsThisMonth++;
-    await db.write();
-    res.json({ result: text, sbRunsThisMonth: user.sbRunsThisMonth, limit });
+    const newRuns = user.sbRunsThisMonth + 1;
+    await query('UPDATE users SET sb_runs_this_month = $1 WHERE id = $2', [newRuns, user.id]);
+    res.json({ result: text, sbRunsThisMonth: newRuns, limit });
   } catch (err) {
     res.status(502).json({ error: 'Claude request failed: ' + err.message });
   }
 });
 
-// POST /api/sandbox/dissect  — proxy to Claude to dissect a prompt
+// POST /api/sandbox/dissect
 app.post('/api/sandbox/dissect', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  checkMonthReset(user);
-
+  await checkMonthReset(user);
   const limit = user.plan === 'pro' ? PRO_RUN_LIMIT : FREE_RUN_LIMIT;
-  if (user.sbRunsThisMonth >= limit) {
-    await db.write();
+  if (user.sbRunsThisMonth >= limit)
     return res.status(429).json({ error: 'Monthly sandbox limit reached', limit, used: user.sbRunsThisMonth });
-  }
-
   const { userText } = req.body;
   if (!userText) return res.status(400).json({ error: 'userText is required' });
-
   const systemPrompt = `You are an AI teaching assistant for prompt engineering.
 Your task is to dissect a user-provided prompt to identify its core components: Role, Format, Tone, Constraint, and Context.
 Output exactly a JSON object, with no markdown wrappers or extra text.
@@ -242,28 +395,21 @@ Only extract the exact substrings or slight functional paraphrases from the text
 Example valid output format:
 {"role": "You are a senior UX designer", "format": "create a quick bulleted list", "constraint": "Limit to top 3 issues"}
 If none of these are strongly clear, return an empty object {}.`;
-
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: 'Prompt to dissect: ' + userText }],
+      model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
+      system: systemPrompt, messages: [{ role: 'user', content: 'Prompt to dissect: ' + userText }],
     });
     const text = message.content[0]?.text;
     if (!text) throw new Error('Empty response from Claude');
-
     let parsed;
     try {
       const match = text.match(/\{[\s\S]*\}/);
       parsed = JSON.parse(match ? match[0] : text);
-    } catch(e) {
-      throw new Error('Claude did not return valid JSON');
-    }
-
-    user.sbRunsThisMonth++;
-    await db.write();
-    res.json({ result: parsed, sbRunsThisMonth: user.sbRunsThisMonth, limit });
+    } catch { throw new Error('Claude did not return valid JSON'); }
+    const newRuns = user.sbRunsThisMonth + 1;
+    await query('UPDATE users SET sb_runs_this_month = $1 WHERE id = $2', [newRuns, user.id]);
+    res.json({ result: parsed, sbRunsThisMonth: newRuns, limit });
   } catch (err) {
     res.status(502).json({ error: 'Claude request failed: ' + err.message });
   }
@@ -271,15 +417,10 @@ If none of these are strongly clear, return an empty object {}.`;
 
 // ── Content filter ────────────────────────────────────────────────────────
 const BLOCKED_TERMS = [
-  // Violence / harm
   'kill','murder','rape','suicide','bomb','terrorist','weapon','shoot','stab','attack',
-  // Hate / slurs (abbreviated to avoid listing them here)
   'nazi','genocide','slur',
-  // Sexual / explicit
   'porn','nude','naked','sex','explicit','nsfw','erotic','fetish','masturbat',
-  // Personal data / scams
   'social security','credit card','phishing','scam','hack','malware','password',
-  // Drugs
   'cocaine','heroin','meth','fentanyl','drug deal',
 ];
 function isAppropriate(text) {
@@ -287,123 +428,111 @@ function isAppropriate(text) {
   return !BLOCKED_TERMS.some(term => lower.includes(term));
 }
 
-// GET /api/library — public community prompts
-app.get('/api/library', (req, res) => {
-  res.json(db.data.communityPrompts);
+// GET /api/library
+app.get('/api/library', async (req, res) => {
+  const result = await query('SELECT * FROM community_prompts ORDER BY published_at DESC');
+  res.json(result.rows.map(r => ({
+    id: r.id, cat: r.cat, title: r.title, prompt: r.prompt,
+    score: r.score, uses: r.uses, publishedBy: r.published_by, publishedAt: r.published_at,
+  })));
 });
 
-// POST /api/library — publish a prompt (pro only, score > 90, content filter)
+// POST /api/library
 app.post('/api/library', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   if (user.teamId) {
-    const team = db.data.teams.find(t => t.id === user.teamId);
-    if (team?.settings?.blockCommunityPublish) {
+    const teamRow = await queryOne('SELECT settings FROM teams WHERE id = $1', [user.teamId]);
+    if (teamRow?.settings?.blockCommunityPublish)
       return res.status(403).json({ error: 'Community publishing disabled by your team admin' });
-    }
   }
   if (user.plan !== 'pro') return res.status(403).json({ error: 'Pro plan required to publish prompts' });
-
   const { prompt, title, category, score } = req.body;
   if (!prompt || !title || !category) return res.status(400).json({ error: 'prompt, title, and category are required' });
   if (!score || score < 90) return res.status(400).json({ error: 'Only prompts scoring 90 or above can be published' });
-  if (!isAppropriate(prompt) || !isAppropriate(title)) {
+  if (!isAppropriate(prompt) || !isAppropriate(title))
     return res.status(422).json({ error: 'Prompt contains inappropriate content and cannot be published' });
-  }
-
-  const entry = {
-    id: 'u_' + crypto.randomUUID(),
-    cat: category,
-    title: title.trim().substring(0, 80),
-    prompt: prompt.trim(),
-    score,
-    uses: 0,
-    publishedBy: user.name,
-    publishedAt: new Date().toISOString(),
-  };
-  db.data.communityPrompts.unshift(entry);
-  await db.write();
+  const id = 'u_' + randomUUID();
+  const titleTrimmed = title.trim().substring(0, 80);
+  const publishedAt = new Date().toISOString();
+  await query(
+    'INSERT INTO community_prompts (id, cat, title, prompt, score, uses, published_by, published_at) VALUES ($1,$2,$3,$4,$5,0,$6,$7)',
+    [id, category, titleTrimmed, prompt.trim(), score, user.name, publishedAt]
+  );
+  const entry = { id, cat: category, title: titleTrimmed, prompt: prompt.trim(), score, uses: 0, publishedBy: user.name, publishedAt };
   res.json({ success: true, entry });
 });
 
 // ── Teams ─────────────────────────────────────────────────────────────────
 
-// POST /api/teams — create a team
+// POST /api/teams
 app.post('/api/teams', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   if (user.teamId) return res.status(409).json({ error: 'Already on a team' });
   const { name } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ error: 'Team name required' });
-  const teamId = 'team_' + crypto.randomUUID();
-  const team = {
-    id: teamId,
-    name: name.trim(),
-    ownerId: user.id,
-    createdAt: new Date().toISOString(),
-    settings: {
-      showStreaks: true, showXP: true, leaderboardType: 'team',
-      blockCommunityPublish: false, requirePromptApproval: true
-    },
-    assignedCategories: {}
-  };
-  db.data.teams.push(team);
-  const member = { id: 'tm_' + crypto.randomUUID(), teamId, userId: user.id, role: 'owner', joinedAt: new Date().toISOString() };
-  db.data.teamMembers.push(member);
-  user.teamId = teamId;
-  user.teamRole = 'owner';
-  await db.write();
+  const teamId = 'team_' + randomUUID();
+  const settings = { showStreaks: true, showXP: true, leaderboardType: 'team', blockCommunityPublish: false, requirePromptApproval: true };
+  const createdAt = new Date().toISOString();
+  await query(
+    'INSERT INTO teams (id, name, owner_id, created_at, settings, assigned_categories) VALUES ($1,$2,$3,$4,$5,$6)',
+    [teamId, name.trim(), user.id, createdAt, JSON.stringify(settings), JSON.stringify({})]
+  );
+  const memberId = 'tm_' + randomUUID();
+  await query(
+    'INSERT INTO team_members (id, team_id, user_id, role, joined_at) VALUES ($1,$2,$3,$4,$5)',
+    [memberId, teamId, user.id, 'owner', new Date().toISOString()]
+  );
+  await query('UPDATE users SET team_id = $1, team_role = $2 WHERE id = $3', [teamId, 'owner', user.id]);
+  const team = { id: teamId, name: name.trim(), ownerId: user.id, createdAt, settings, assignedCategories: {} };
   res.json({ team, role: 'owner' });
 });
 
 // GET /api/teams/mine
 app.get('/api/teams/mine', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   if (!user.teamId) return res.json({ team: null });
-  const team = db.data.teams.find(t => t.id === user.teamId);
-  if (!team) return res.json({ team: null });
-  const member = db.data.teamMembers.find(m => m.userId === user.id && m.teamId === user.teamId);
-  const memberCount = db.data.teamMembers.filter(m => m.teamId === user.teamId).length;
-  // Inject defaults for any settings fields added after team creation
+  const teamRow = await queryOne('SELECT * FROM teams WHERE id = $1', [user.teamId]);
+  if (!teamRow) return res.json({ team: null });
+  const team = rowToTeam(teamRow);
+  const memberRow = await queryOne('SELECT role FROM team_members WHERE user_id = $1 AND team_id = $2', [user.id, user.teamId]);
+  const countRes = await query('SELECT COUNT(*) FROM team_members WHERE team_id = $1', [user.teamId]);
+  const memberCount = parseInt(countRes.rows[0].count);
   const settingDefaults = { showStreaks: true, showXP: true, leaderboardType: 'team', blockCommunityPublish: false, requirePromptApproval: true, enableTeamLibrary: true };
-  const teamWithDefaults = { ...team, settings: { ...settingDefaults, ...(team.settings || {}) } };
-  res.json({ team: teamWithDefaults, role: member?.role || 'member', memberCount });
+  const teamWithDefaults = { ...team, settings: { ...settingDefaults, ...team.settings } };
+  res.json({ team: teamWithDefaults, role: memberRow?.role || 'member', memberCount });
 });
 
 // PUT /api/teams/:teamId/settings
 app.put('/api/teams/:teamId/settings', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
-  const team = db.data.teams.find(t => t.id === req.params.teamId);
-  if (!team) return res.status(404).json({ error: 'Team not found' });
+  const teamRow = await queryOne('SELECT * FROM teams WHERE id = $1', [req.params.teamId]);
+  if (!teamRow) return res.status(404).json({ error: 'Team not found' });
+  const team = rowToTeam(teamRow);
   const allowed = ['showStreaks','showXP','leaderboardType','blockCommunityPublish','requirePromptApproval','enableTeamLibrary'];
   for (const k of allowed) {
     if (req.body[k] !== undefined) team.settings[k] = req.body[k];
   }
-  await db.write();
-  console.log("body:", req.body, "team settings after:", team.settings); res.json({ success: true, settings: team.settings });
+  await query('UPDATE teams SET settings = $1 WHERE id = $2', [JSON.stringify(team.settings), req.params.teamId]);
+  res.json({ success: true, settings: team.settings });
 });
 
 // PUT /api/teams/:teamId/name
 app.put('/api/teams/:teamId/name', requireAuth, (req, res, next) => requireTeamRole('owner')(req, res, next), async (req, res) => {
-  const team = db.data.teams.find(t => t.id === req.params.teamId);
-  if (!team) return res.status(404).json({ error: 'Team not found' });
   const { name } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ error: 'Team name required' });
-  team.name = name.trim();
-  await db.write();
-  res.json({ success: true, name: team.name });
+  await query('UPDATE teams SET name = $1 WHERE id = $2', [name.trim(), req.params.teamId]);
+  res.json({ success: true, name: name.trim() });
 });
 
 // PUT /api/teams/:teamId/categories
 app.put('/api/teams/:teamId/categories', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
-  const team = db.data.teams.find(t => t.id === req.params.teamId);
-  if (!team) return res.status(404).json({ error: 'Team not found' });
   const { assignedCategories } = req.body;
   if (assignedCategories && typeof assignedCategories === 'object') {
-    team.assignedCategories = assignedCategories;
+    await query('UPDATE teams SET assigned_categories = $1 WHERE id = $2', [JSON.stringify(assignedCategories), req.params.teamId]);
   }
-  await db.write();
-  res.json({ success: true, assignedCategories: team.assignedCategories });
+  res.json({ success: true, assignedCategories });
 });
 
 // ── Invites ───────────────────────────────────────────────────────────────
@@ -412,15 +541,14 @@ app.put('/api/teams/:teamId/categories', requireAuth, (req, res, next) => requir
 app.post('/api/teams/:teamId/invites', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
   const { label } = req.body;
   const token = randomBytes(32).toString('hex');
-  const invite = {
-    id: 'inv_' + crypto.randomUUID(), teamId: req.params.teamId,
-    token, createdBy: req.user.id, label: label || '',
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
-    usedBy: null, usedAt: null
-  };
-  db.data.teamInvites.push(invite);
-  await db.write();
+  const id = 'inv_' + randomUUID();
+  const createdAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+  await query(
+    'INSERT INTO team_invites (id, team_id, token, created_by, label, created_at, expires_at, used_by, used_at) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL)',
+    [id, req.params.teamId, token, req.user.id, label || '', createdAt, expiresAt]
+  );
+  const invite = { id, teamId: req.params.teamId, token, createdBy: req.user.id, label: label || '', createdAt, expiresAt, usedBy: null, usedAt: null };
   res.json({ invite, link: `/?invite=${token}` });
 });
 
@@ -429,85 +557,85 @@ app.post('/api/teams/:teamId/invites/bulk', requireAuth, (req, res, next) => req
   const { labels } = req.body;
   if (!Array.isArray(labels) || labels.length === 0) return res.status(400).json({ error: 'labels array required' });
   if (labels.length > 50) return res.status(400).json({ error: 'Maximum 50 invites at once' });
-  const invites = labels.map(label => {
+  const invites = [];
+  for (const label of labels) {
     const token = randomBytes(32).toString('hex');
-    return {
-      id: 'inv_' + crypto.randomUUID(), teamId: req.params.teamId,
-      token, createdBy: req.user.id, label: label || '',
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
-      usedBy: null, usedAt: null
-    };
-  });
-  db.data.teamInvites.push(...invites);
-  await db.write();
+    const id = 'inv_' + randomUUID();
+    const createdAt = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+    await query(
+      'INSERT INTO team_invites (id, team_id, token, created_by, label, created_at, expires_at, used_by, used_at) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL)',
+      [id, req.params.teamId, token, req.user.id, label || '', createdAt, expiresAt]
+    );
+    invites.push({ id, teamId: req.params.teamId, token, createdBy: req.user.id, label: label || '', createdAt, expiresAt, usedBy: null, usedAt: null });
+  }
   res.json({ invites: invites.map(inv => ({ ...inv, link: `/?invite=${inv.token}` })) });
 });
 
 // GET /api/teams/:teamId/invites
-app.get('/api/teams/:teamId/invites', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), (req, res) => {
+app.get('/api/teams/:teamId/invites', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
   const now = new Date().toISOString();
-  const pending = db.data.teamInvites.filter(inv =>
-    inv.teamId === req.params.teamId && !inv.usedBy && inv.expiresAt > now
+  const result = await query(
+    'SELECT * FROM team_invites WHERE team_id = $1 AND used_by IS NULL AND expires_at > $2',
+    [req.params.teamId, now]
   );
-  res.json(pending.map(inv => ({ ...inv, link: `/?invite=${inv.token}` })));
+  res.json(result.rows.map(r => ({ ...rowToInvite(r), link: `/?invite=${r.token}` })));
 });
 
 // DELETE /api/teams/:teamId/invites/:inviteId
 app.delete('/api/teams/:teamId/invites/:inviteId', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
-  const idx = db.data.teamInvites.findIndex(inv => inv.id === req.params.inviteId && inv.teamId === req.params.teamId);
-  if (idx === -1) return res.status(404).json({ error: 'Invite not found' });
-  db.data.teamInvites.splice(idx, 1);
-  await db.write();
+  const result = await query('DELETE FROM team_invites WHERE id = $1 AND team_id = $2', [req.params.inviteId, req.params.teamId]);
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Invite not found' });
   res.json({ success: true });
 });
 
-// GET /api/invites/:token — public preview
-app.get('/api/invites/:token', (req, res) => {
-  const inv = db.data.teamInvites.find(i => i.token === req.params.token);
-  if (!inv) return res.json({ valid: false, reason: 'Invalid invite link' });
-  if (inv.usedBy) return res.json({ valid: false, reason: 'This invite has already been used' });
-  if (new Date(inv.expiresAt) < new Date()) return res.json({ valid: false, reason: 'This invite has expired' });
-  const team = db.data.teams.find(t => t.id === inv.teamId);
-  const creator = db.data.users.find(u => u.id === inv.createdBy);
-  res.json({ valid: true, teamName: team?.name || 'Unknown Team', inviterName: creator?.name || 'Someone' });
+// GET /api/invites/:token
+app.get('/api/invites/:token', async (req, res) => {
+  const row = await queryOne('SELECT * FROM team_invites WHERE token = $1', [req.params.token]);
+  if (!row) return res.json({ valid: false, reason: 'Invalid invite link' });
+  if (row.used_by) return res.json({ valid: false, reason: 'This invite has already been used' });
+  if (new Date(row.expires_at) < new Date()) return res.json({ valid: false, reason: 'This invite has expired' });
+  const teamRow = await queryOne('SELECT name FROM teams WHERE id = $1', [row.team_id]);
+  const creatorRow = await queryOne('SELECT name FROM users WHERE id = $1', [row.created_by]);
+  res.json({ valid: true, teamName: teamRow?.name || 'Unknown Team', inviterName: creatorRow?.name || 'Someone' });
 });
 
 // POST /api/invites/:token/accept
 app.post('/api/invites/:token/accept', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   if (user.teamId) return res.status(409).json({ error: 'Already on a team' });
-  const inv = db.data.teamInvites.find(i => i.token === req.params.token);
-  if (!inv) return res.status(404).json({ error: 'Invalid invite link' });
-  if (inv.usedBy) return res.status(410).json({ error: 'This invite has already been used' });
-  if (new Date(inv.expiresAt) < new Date()) return res.status(410).json({ error: 'This invite has expired' });
-  const member = { id: 'tm_' + crypto.randomUUID(), teamId: inv.teamId, userId: user.id, role: 'member', joinedAt: new Date().toISOString() };
-  db.data.teamMembers.push(member);
-  inv.usedBy = user.id;
-  inv.usedAt = new Date().toISOString();
-  user.teamId = inv.teamId;
-  user.teamRole = 'member';
-  await db.write();
-  const team = db.data.teams.find(t => t.id === inv.teamId);
-  res.json({ success: true, team, role: 'member' });
+  const row = await queryOne('SELECT * FROM team_invites WHERE token = $1', [req.params.token]);
+  if (!row) return res.status(404).json({ error: 'Invalid invite link' });
+  if (row.used_by) return res.status(410).json({ error: 'This invite has already been used' });
+  if (new Date(row.expires_at) < new Date()) return res.status(410).json({ error: 'This invite has expired' });
+  const memberId = 'tm_' + randomUUID();
+  await query(
+    'INSERT INTO team_members (id, team_id, user_id, role, joined_at) VALUES ($1,$2,$3,$4,$5)',
+    [memberId, row.team_id, user.id, 'member', new Date().toISOString()]
+  );
+  await query('UPDATE team_invites SET used_by = $1, used_at = $2 WHERE id = $3', [user.id, new Date().toISOString(), row.id]);
+  await query('UPDATE users SET team_id = $1, team_role = $2 WHERE id = $3', [row.team_id, 'member', user.id]);
+  const teamRow = await queryOne('SELECT * FROM teams WHERE id = $1', [row.team_id]);
+  res.json({ success: true, team: rowToTeam(teamRow), role: 'member' });
 });
 
 // ── Members ───────────────────────────────────────────────────────────────
 
 // GET /api/teams/:teamId/members
-app.get('/api/teams/:teamId/members', requireAuth, (req, res, next) => requireTeamRole('owner','admin','member')(req, res, next), (req, res) => {
-  const members = db.data.teamMembers.filter(m => m.teamId === req.params.teamId);
-  const result = members.map(m => {
-    const u = getUser(m.userId);
-    if (!u) return null;
-    return {
-      id: u.id, name: u.name, role: m.role, joinedAt: m.joinedAt,
+app.get('/api/teams/:teamId/members', requireAuth, (req, res, next) => requireTeamRole('owner','admin','member')(req, res, next), async (req, res) => {
+  const membersResult = await query('SELECT * FROM team_members WHERE team_id = $1', [req.params.teamId]);
+  const result = [];
+  for (const m of membersResult.rows) {
+    const u = await getUser(m.user_id);
+    if (!u) continue;
+    result.push({
+      id: u.id, name: u.name, role: m.role, joinedAt: m.joined_at,
       lastVisit: u.lastVisit, streak: u.streak || 0, xp: u.xp || 0,
       lessonsCompleted: (u.completedLessons || []).length,
-      missionsPassed: (u.passedMissions || []).length
-    };
-  }).filter(Boolean);
+      missionsPassed: (u.passedMissions || []).length,
+    });
+  }
   res.json(result);
 });
 
@@ -515,53 +643,54 @@ app.get('/api/teams/:teamId/members', requireAuth, (req, res, next) => requireTe
 app.put('/api/teams/:teamId/members/:userId/role', requireAuth, (req, res, next) => requireTeamRole('owner')(req, res, next), async (req, res) => {
   const { role } = req.body;
   if (!['admin','member'].includes(role)) return res.status(400).json({ error: 'Role must be admin or member' });
-  const team = db.data.teams.find(t => t.id === req.params.teamId);
-  if (req.params.userId === team.ownerId) return res.status(400).json({ error: 'Cannot change owner role' });
-  const member = db.data.teamMembers.find(m => m.userId === req.params.userId && m.teamId === req.params.teamId);
-  if (!member) return res.status(404).json({ error: 'Member not found' });
-  member.role = role;
-  const targetUser = getUser(req.params.userId);
-  if (targetUser) targetUser.teamRole = role;
-  await db.write();
+  const teamRow = await queryOne('SELECT owner_id FROM teams WHERE id = $1', [req.params.teamId]);
+  if (req.params.userId === teamRow?.owner_id) return res.status(400).json({ error: 'Cannot change owner role' });
+  const result = await query(
+    'UPDATE team_members SET role = $1 WHERE user_id = $2 AND team_id = $3',
+    [role, req.params.userId, req.params.teamId]
+  );
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Member not found' });
+  await query('UPDATE users SET team_role = $1 WHERE id = $2', [role, req.params.userId]);
   res.json({ success: true, role });
 });
 
 // DELETE /api/teams/:teamId/members/:userId
 app.delete('/api/teams/:teamId/members/:userId', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
-  const team = db.data.teams.find(t => t.id === req.params.teamId);
-  if (req.params.userId === team.ownerId) return res.status(400).json({ error: 'Cannot remove the team owner' });
-  const idx = db.data.teamMembers.findIndex(m => m.userId === req.params.userId && m.teamId === req.params.teamId);
-  if (idx === -1) return res.status(404).json({ error: 'Member not found' });
-  db.data.teamMembers.splice(idx, 1);
-  const targetUser = getUser(req.params.userId);
-  if (targetUser) { targetUser.teamId = null; targetUser.teamRole = null; }
-  await db.write();
+  const teamRow = await queryOne('SELECT owner_id FROM teams WHERE id = $1', [req.params.teamId]);
+  if (req.params.userId === teamRow?.owner_id) return res.status(400).json({ error: 'Cannot remove the team owner' });
+  const result = await query(
+    'DELETE FROM team_members WHERE user_id = $1 AND team_id = $2',
+    [req.params.userId, req.params.teamId]
+  );
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Member not found' });
+  await query('UPDATE users SET team_id = NULL, team_role = NULL WHERE id = $1', [req.params.userId]);
   res.json({ success: true });
 });
 
 // DELETE /api/teams/leave
 app.delete('/api/teams/leave', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   if (!user.teamId) return res.status(400).json({ error: 'Not on a team' });
-  const team = db.data.teams.find(t => t.id === user.teamId);
-  if (team && team.ownerId === user.id) return res.status(400).json({ error: 'Owner cannot leave. Transfer ownership first.' });
-  const idx = db.data.teamMembers.findIndex(m => m.userId === user.id && m.teamId === user.teamId);
-  if (idx !== -1) db.data.teamMembers.splice(idx, 1);
-  user.teamId = null;
-  user.teamRole = null;
-  await db.write();
+  const teamRow = await queryOne('SELECT owner_id FROM teams WHERE id = $1', [user.teamId]);
+  if (teamRow?.owner_id === user.id) return res.status(400).json({ error: 'Owner cannot leave. Transfer ownership first.' });
+  await query('DELETE FROM team_members WHERE user_id = $1 AND team_id = $2', [user.id, user.teamId]);
+  await query('UPDATE users SET team_id = NULL, team_role = NULL WHERE id = $1', [user.id]);
   res.json({ success: true });
 });
 
 // ── Team Analytics ────────────────────────────────────────────────────────
 
 // GET /api/teams/:teamId/analytics
-app.get('/api/teams/:teamId/analytics', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), (req, res) => {
-  const members = db.data.teamMembers.filter(m => m.teamId === req.params.teamId);
-  const users = members.map(m => getUser(m.userId)).filter(Boolean);
-  if (users.length === 0) return res.json({ completionRate: 0, categoryBreakdown: [], topPerformers: [] });
-  const totalLessons = 13; // approximate total lessons across all tracks
+app.get('/api/teams/:teamId/analytics', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
+  const membersResult = await query('SELECT user_id FROM team_members WHERE team_id = $1', [req.params.teamId]);
+  if (membersResult.rows.length === 0) return res.json({ completionRate: 0, categoryBreakdown: [], topPerformers: [] });
+  const users = [];
+  for (const m of membersResult.rows) {
+    const u = await getUser(m.user_id);
+    if (u) users.push(u);
+  }
+  const totalLessons = 13;
   const completionRates = users.map(u => (u.completedLessons || []).length / totalLessons);
   const avgCompletion = completionRates.reduce((a, b) => a + b, 0) / users.length;
   const categories = ['core','writing','code','research','marketing','productivity','learning','data','design','hr','legal','finance','selfdev'];
@@ -572,7 +701,8 @@ app.get('/api/teams/:teamId/analytics', requireAuth, (req, res, next) => require
     }, 0) / users.length;
     return { categoryId: cat, avgPct: Math.round(avgPct * 100) };
   });
-  const topPerformers = users.map(u => ({ id: u.id, name: u.name, xp: u.xp || 0, lessonsCompleted: (u.completedLessons||[]).length }))
+  const topPerformers = users
+    .map(u => ({ id: u.id, name: u.name, xp: u.xp || 0, lessonsCompleted: (u.completedLessons||[]).length }))
     .sort((a, b) => b.xp - a.xp).slice(0, 5);
   res.json({ completionRate: Math.round(avgCompletion * 100), categoryBreakdown, topPerformers });
 });
@@ -580,20 +710,12 @@ app.get('/api/teams/:teamId/analytics', requireAuth, (req, res, next) => require
 // ── Team Prompt Library ───────────────────────────────────────────────────
 
 // GET /api/teams/:teamId/prompts
-app.get('/api/teams/:teamId/prompts', requireAuth, (req, res, next) => requireTeamRole('owner','admin','member')(req, res, next), (req, res) => {
+app.get('/api/teams/:teamId/prompts', requireAuth, (req, res, next) => requireTeamRole('owner','admin','member')(req, res, next), async (req, res) => {
   const isAdminOrOwner = ['owner','admin'].includes(req.teamMember.role);
-  const prompts = db.data.teamPrompts
-    .filter(p => {
-      if (p.teamId !== req.params.teamId) return false;
-      if (isAdminOrOwner) return true;
-      return p.status === 'approved';
-    })
-    .map(p => {
-      if (p.publishedBy) return p;
-      const u = db.data.users.find(u => u.id === p.submittedBy);
-      return { ...p, publishedBy: u?.name || 'Unknown' };
-    });
-  res.json(prompts);
+  const result = isAdminOrOwner
+    ? await query('SELECT * FROM team_prompts WHERE team_id = $1 ORDER BY submitted_at DESC', [req.params.teamId])
+    : await query('SELECT * FROM team_prompts WHERE team_id = $1 AND status = $2 ORDER BY submitted_at DESC', [req.params.teamId, 'approved']);
+  res.json(result.rows.map(rowToPrompt));
 });
 
 // POST /api/teams/:teamId/prompts
@@ -602,19 +724,17 @@ app.post('/api/teams/:teamId/prompts', requireAuth, (req, res, next) => requireT
   if (!title || !prompt || !category) return res.status(400).json({ error: 'title, prompt, category required' });
   if (!score || score < 85) return res.status(400).json({ error: 'Score must be 85 or above' });
   if (!isAppropriate(prompt) || !isAppropriate(title)) return res.status(422).json({ error: 'Content contains inappropriate material' });
-  const team = db.data.teams.find(t => t.id === req.params.teamId);
-  const status = team?.settings?.requirePromptApproval ? 'pending' : 'approved';
-  const submitter = getUser(req.user.id);
-  const entry = {
-    id: 'tp_' + crypto.randomUUID(), teamId: req.params.teamId,
-    submittedBy: req.user.id, publishedBy: submitter?.name || 'Unknown',
-    title: title.trim().substring(0, 80),
-    prompt: prompt.trim(), category, score, status,
-    reviewedBy: null, reviewedAt: null,
-    submittedAt: new Date().toISOString(), uses: 0
-  };
-  db.data.teamPrompts.push(entry);
-  await db.write();
+  const teamRow = await queryOne('SELECT settings FROM teams WHERE id = $1', [req.params.teamId]);
+  const status = teamRow?.settings?.requirePromptApproval ? 'pending' : 'approved';
+  const submitter = await getUser(req.user.id);
+  const id = 'tp_' + randomUUID();
+  const submittedAt = new Date().toISOString();
+  const titleTrimmed = title.trim().substring(0, 80);
+  await query(
+    'INSERT INTO team_prompts (id, team_id, submitted_by, published_by, title, prompt, category, score, status, reviewed_by, reviewed_at, submitted_at, uses) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NULL,NULL,$10,0)',
+    [id, req.params.teamId, req.user.id, submitter?.name || 'Unknown', titleTrimmed, prompt.trim(), category, score, status, submittedAt]
+  );
+  const entry = { id, teamId: req.params.teamId, submittedBy: req.user.id, publishedBy: submitter?.name || 'Unknown', title: titleTrimmed, prompt: prompt.trim(), category, score, status, reviewedBy: null, reviewedAt: null, submittedAt, uses: 0 };
   res.json({ success: true, entry });
 });
 
@@ -622,28 +742,26 @@ app.post('/api/teams/:teamId/prompts', requireAuth, (req, res, next) => requireT
 app.put('/api/teams/:teamId/prompts/:promptId/review', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
   const { action } = req.body;
   if (!['approve','reject'].includes(action)) return res.status(400).json({ error: 'action must be approve or reject' });
-  const prompt = db.data.teamPrompts.find(p => p.id === req.params.promptId && p.teamId === req.params.teamId);
-  if (!prompt) return res.status(404).json({ error: 'Prompt not found' });
-  prompt.status = action === 'approve' ? 'approved' : 'rejected';
-  prompt.reviewedBy = req.user.id;
-  prompt.reviewedAt = new Date().toISOString();
-  await db.write();
-  res.json({ success: true, status: prompt.status });
+  const status = action === 'approve' ? 'approved' : 'rejected';
+  const result = await query(
+    'UPDATE team_prompts SET status = $1, reviewed_by = $2, reviewed_at = $3 WHERE id = $4 AND team_id = $5',
+    [status, req.user.id, new Date().toISOString(), req.params.promptId, req.params.teamId]
+  );
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Prompt not found' });
+  res.json({ success: true, status });
 });
 
 // DELETE /api/teams/:teamId/prompts/:promptId
 app.delete('/api/teams/:teamId/prompts/:promptId', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  const prompt = db.data.teamPrompts.find(p => p.id === req.params.promptId && p.teamId === req.params.teamId);
-  if (!prompt) return res.status(404).json({ error: 'Prompt not found' });
-  const member = db.data.teamMembers.find(m => m.userId === user.id && m.teamId === req.params.teamId);
-  if (!member) return res.status(403).json({ error: 'Not a team member' });
-  if (!['owner','admin'].includes(member.role) && prompt.submittedBy !== user.id)
+  const promptRow = await queryOne('SELECT * FROM team_prompts WHERE id = $1 AND team_id = $2', [req.params.promptId, req.params.teamId]);
+  if (!promptRow) return res.status(404).json({ error: 'Prompt not found' });
+  const memberRow = await queryOne('SELECT role FROM team_members WHERE user_id = $1 AND team_id = $2', [user.id, req.params.teamId]);
+  if (!memberRow) return res.status(403).json({ error: 'Not a team member' });
+  if (!['owner','admin'].includes(memberRow.role) && promptRow.submitted_by !== user.id)
     return res.status(403).json({ error: 'Insufficient permissions' });
-  const idx = db.data.teamPrompts.findIndex(p => p.id === req.params.promptId);
-  db.data.teamPrompts.splice(idx, 1);
-  await db.write();
+  await query('DELETE FROM team_prompts WHERE id = $1', [req.params.promptId]);
   res.json({ success: true });
 });
 
@@ -651,30 +769,30 @@ app.delete('/api/teams/:teamId/prompts/:promptId', requireAuth, async (req, res)
 
 // POST /api/certificates
 app.post('/api/certificates', requireAuth, async (req, res) => {
-  const user = getUser(req.user.id);
+  const user = await getUser(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   const { type, categoryId, categoryName } = req.body;
   if (!type) return res.status(400).json({ error: 'type required' });
-  const existing = db.data.certificates.find(c => c.userId === user.id && c.type === type && c.categoryId === categoryId);
-  if (existing) return res.json({ cert: existing, alreadyExists: true });
-  const cert = {
-    id: 'cert_' + crypto.randomUUID(), userId: user.id, teamId: user.teamId || null,
-    type, categoryId: categoryId || null, categoryName: categoryName || null,
-    earnedAt: new Date().toISOString()
-  };
-  db.data.certificates.push(cert);
-  await db.write();
+  const existing = await queryOne(
+    'SELECT * FROM certificates WHERE user_id = $1 AND type = $2 AND (category_id = $3 OR (category_id IS NULL AND $3::text IS NULL))',
+    [user.id, type, categoryId || null]
+  );
+  if (existing) return res.json({ cert: rowToCert(existing), alreadyExists: true });
+  const id = 'cert_' + randomUUID();
+  const earnedAt = new Date().toISOString();
+  await query(
+    'INSERT INTO certificates (id, user_id, team_id, type, category_id, category_name, earned_at) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+    [id, user.id, user.teamId || null, type, categoryId || null, categoryName || null, earnedAt]
+  );
+  const cert = { id, userId: user.id, teamId: user.teamId || null, type, categoryId: categoryId || null, categoryName: categoryName || null, earnedAt };
   res.json({ cert });
 });
 
 // GET /api/certificates/mine
-app.get('/api/certificates/mine', requireAuth, (req, res) => {
-  const certs = db.data.certificates.filter(c => c.userId === req.user.id);
-  res.json(certs);
+app.get('/api/certificates/mine', requireAuth, async (req, res) => {
+  const result = await query('SELECT * FROM certificates WHERE user_id = $1', [req.user.id]);
+  res.json(result.rows.map(rowToCert));
 });
-
-// Modify POST /api/library to check blockCommunityPublish
-// (already defined above — we patch by overriding the route handler logic via checking team settings)
 
 // ── OAuth ─────────────────────────────────────────────────────────────────
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
@@ -683,16 +801,18 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const MS_CLIENT_ID = process.env.MS_CLIENT_ID;
 const MS_CLIENT_SECRET = process.env.MS_CLIENT_SECRET;
 
-function oauthFindOrCreateUser(email, name) {
-  let user = db.data.users.find(u => u.email === email.toLowerCase());
-  if (!user) {
-    const id = crypto.randomUUID();
-    const now = new Date();
-    const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
-    user = { id, name, email: email.toLowerCase(), passwordHash: null, plan: 'free', sbRunsThisMonth: 0, sbResetMonth: monthKey, xp: 0, streak: 1, lastVisit: '', completedLessons: [], passedMissions: [], teamId: null, teamRole: null };
-    db.data.users.push(user);
-  }
-  return user;
+async function oauthFindOrCreateUser(email, name) {
+  const existing = await queryOne('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
+  if (existing) return rowToUser(existing);
+  const id = randomUUID();
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+  await query(
+    `INSERT INTO users (id, name, email, password_hash, plan, sb_runs_this_month, sb_reset_month, xp, streak, last_visit, completed_lessons, passed_missions, team_id, team_role)
+     VALUES ($1,$2,$3,NULL,'free',0,$4,0,1,'','[]','[]',NULL,NULL)`,
+    [id, name, email.toLowerCase(), monthKey]
+  );
+  return await getUser(id);
 }
 
 // GET /auth/google
@@ -715,11 +835,8 @@ app.get('/auth/google/callback', async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        code,
-        client_id: GOOGLE_CLIENT_ID,
-        client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: `${BASE_URL}/auth/google/callback`,
-        grant_type: 'authorization_code',
+        code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: `${BASE_URL}/auth/google/callback`, grant_type: 'authorization_code',
       }),
     });
     const tokenData = await tokenRes.json();
@@ -729,13 +846,10 @@ app.get('/auth/google/callback', async (req, res) => {
     });
     const profile = await userRes.json();
     if (!profile.email) return res.redirect('/?auth_error=1');
-    const user = oauthFindOrCreateUser(profile.email, profile.name || profile.email.split('@')[0]);
-    await db.write();
+    const user = await oauthFindOrCreateUser(profile.email, profile.name || profile.email.split('@')[0]);
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '30d' });
     res.redirect(`/?token=${token}`);
-  } catch {
-    res.redirect('/?auth_error=1');
-  }
+  } catch { res.redirect('/?auth_error=1'); }
 });
 
 // GET /auth/microsoft
@@ -759,11 +873,8 @@ app.get('/auth/microsoft/callback', async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        code,
-        client_id: MS_CLIENT_ID,
-        client_secret: MS_CLIENT_SECRET,
-        redirect_uri: `${BASE_URL}/auth/microsoft/callback`,
-        grant_type: 'authorization_code',
+        code, client_id: MS_CLIENT_ID, client_secret: MS_CLIENT_SECRET,
+        redirect_uri: `${BASE_URL}/auth/microsoft/callback`, grant_type: 'authorization_code',
       }),
     });
     const tokenData = await tokenRes.json();
@@ -774,13 +885,10 @@ app.get('/auth/microsoft/callback', async (req, res) => {
     const profile = await userRes.json();
     const email = profile.mail || profile.userPrincipalName;
     if (!email) return res.redirect('/?auth_error=1');
-    const user = oauthFindOrCreateUser(email, profile.displayName || email.split('@')[0]);
-    await db.write();
+    const user = await oauthFindOrCreateUser(email, profile.displayName || email.split('@')[0]);
     const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '30d' });
     res.redirect(`/?token=${token}`);
-  } catch {
-    res.redirect('/?auth_error=1');
-  }
+  } catch { res.redirect('/?auth_error=1'); }
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────
