@@ -1329,6 +1329,10 @@
       z-index: 1
     }
 
+    [data-theme="dark"] .cta-banner {
+      background: #1e1c14
+    }
+
     [data-theme="dark"] .cta-banner h2 {
       color: #F0EDE8
     }
@@ -4169,8 +4173,7 @@
               autocomplete="name"></div>
           <div class="auth-field"><label>Email</label><input type="email" id="signupEmail" placeholder="you@example.com"
               autocomplete="email"></div>
-          <div class="auth-field"><label>Password</label><input type="password" id="signupPassword"
-              placeholder="At least 6 characters" autocomplete="new-password"></div>
+          <div class="auth-field"><label>Password</label><div style="position:relative"><input type="password" id="signupPassword" placeholder="At least 6 characters" autocomplete="new-password" style="width:100%;box-sizing:border-box;padding-right:44px"><button type="button" onclick="togglePw('signupPassword',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0">Show</button></div></div>
           <button class="btn-auth" onclick="handleSignup()">Create Free Account</button>
           <div class="auth-error" id="signupError"></div>
           <div class="auth-divider">or continue with</div>
@@ -4187,8 +4190,7 @@
         <div id="authLogin" style="display:none">
           <div class="auth-field"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com"
               autocomplete="email"></div>
-          <div class="auth-field"><label>Password</label><input type="password" id="loginPassword"
-              placeholder="Your password" autocomplete="current-password"></div>
+          <div class="auth-field"><label>Password</label><div style="position:relative"><input type="password" id="loginPassword" placeholder="Your password" autocomplete="current-password" style="width:100%;box-sizing:border-box;padding-right:44px"><button type="button" onclick="togglePw('loginPassword',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0">Show</button></div></div>
           <button class="btn-auth" onclick="handleLogin()">Log In</button>
           <div class="auth-error" id="loginError"></div>
           <div class="auth-divider">or continue with</div>
@@ -4293,19 +4295,6 @@
                       <div class="usage-bar-fill" id="usageBarFill" style="width:0%"></div>
                     </div>
                   </div>
-                </div>
-              </div>
-              <div class="settings-row">
-                <div class="settings-row-info">
-                  <div class="settings-row-label">Switch Plan</div>
-                  <div class="settings-row-sub">Pro unlocks all tiers, 140 runs/month, and AI grading</div>
-                </div>
-                <div class="settings-row-action">
-                  <select id="settingsPlanSelect" onchange="settingsSwitchPlan(this.value)"
-                    style="padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer">
-                    <option value="free">Free</option>
-                    <option value="pro">Pro</option>
-                  </select>
                 </div>
               </div>
             </div>
@@ -4980,13 +4969,12 @@
       <div class="onboard-modal">
         <button class="settings-close"
           onclick="document.getElementById('createTeamModal').classList.remove('open')">✕</button>
-        <div style="font-size:32px;margin-bottom:16px">🏢</div>
         <h3 style="font-size:22px;margin-bottom:8px">Create Your Team</h3>
         <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Set up your organization on PromptCraft and
           start inviting members.</p>
         <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">ORGANIZATION
           NAME</label>
-        <input class="pub-input" id="createTeamName" placeholder="e.g. Acme Corp" style="width:100%;margin-bottom:16px">
+        <input class="pub-input" id="createTeamName" placeholder="e.g. Business Corp" style="width:100%;margin-bottom:16px">
         <div class="pub-error" id="createTeamError" style="margin-bottom:10px"></div>
         <button class="btn-primary" style="width:100%" onclick="submitCreateTeam()">Create Team →</button>
       </div>
@@ -5115,7 +5103,7 @@
         const isPro = authUser.plan === 'pro';
         const limit = isPro ? 140 : FREE_LIMIT;
         const planLabel = isPro ? ' <span style="font-size:10px;color:var(--accent-text);font-weight:800">PRO</span>' : '';
-        area.innerHTML = `<div class="nav-avatar" title="${authUser.name}" onclick="toggleAvatarMenu(event)">${initials}<div class="nav-avatar-menu" onclick="event.stopPropagation()"><div style="padding:8px 14px 4px;font-size:12px;color:var(--muted);font-weight:700">${authUser.name}${planLabel}</div><div style="padding:2px 14px 8px;font-size:11px;color:var(--muted)">${runs}/${limit} sandbox runs</div><hr style="border:none;border-top:1px solid var(--border);margin:4px 8px"><button onclick="openSettings()">Settings</button><button onclick="handleSignout()">Sign Out</button></div></div>`;
+        area.innerHTML = `<div class="nav-avatar" title="${authUser.name}" onclick="toggleAvatarMenu(event)">${initials}<div class="nav-avatar-menu" onclick="event.stopPropagation()"><div style="padding:8px 14px 8px;font-size:12px;color:var(--muted);font-weight:700">${authUser.name}${planLabel}</div><hr style="border:none;border-top:1px solid var(--border);margin:4px 8px"><button onclick="openSettings()">Settings</button><button onclick="handleSignout()">Sign Out</button></div></div>`;
         if (teamBtn) teamBtn.style.display = (authUser.teamRole === 'owner' || authUser.teamRole === 'admin') ? '' : 'none';
         const adminBtn = document.getElementById('adminNavBtn');
         if (adminBtn) adminBtn.style.display = authUser.isAdmin ? '' : 'none';
@@ -5150,6 +5138,13 @@
       document.getElementById('authLogin').style.display = tab === 'login' ? '' : 'none';
       document.getElementById('tabSignup').classList.toggle('active', tab === 'signup');
       document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+    }
+
+    function togglePw(id, btn) {
+      const input = document.getElementById(id);
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
     }
 
     async function handleSignup() {
