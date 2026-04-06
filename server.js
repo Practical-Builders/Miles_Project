@@ -25,9 +25,32 @@ function loadEnv() {
 loadEnv();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'promptcraft-secret-change-me';
+const BASE_URL = process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const FREE_RUN_LIMIT = 10;
-const PRO_RUN_LIMIT = 140;
+const PRO_RUN_LIMIT = 200;
+
+// ── Resend email (optional — requires RESEND_API_KEY) ─────────────────────
+let resendClient = null;
+try {
+  const { Resend } = await import('resend');
+  if (process.env.RESEND_API_KEY) resendClient = new Resend(process.env.RESEND_API_KEY);
+} catch {}
+
+const RESEND_FROM = process.env.RESEND_FROM || 'PromptCraft <onboarding@resend.dev>';
+// onboarding@resend.dev can only deliver to the Resend account owner's address until a domain is verified.
+// Set RESEND_OVERRIDE_TO to your Resend account email to receive all emails during testing.
+const RESEND_OVERRIDE_TO = process.env.RESEND_OVERRIDE_TO || null;
+
+async function sendEmail(to, subject, html) {
+  if (!resendClient) { console.log('[email] No Resend client — skipping email to', to); return; }
+  const recipient = RESEND_OVERRIDE_TO || to;
+  try {
+    const result = await resendClient.emails.send({ from: RESEND_FROM, to: recipient, subject, html });
+    if (result.error) console.error('[email] Resend error:', JSON.stringify(result.error));
+    else console.log('[email] Sent to', recipient, result.data?.id);
+  } catch (e) { console.error('[email] Send failed:', e.message); }
+}
 
 // ── Database ──────────────────────────────────────────────────────────────
 const pool = new Pool({
@@ -48,6 +71,10 @@ async function queryOne(sql, params = []) {
 
 // Create tables and migrate schema on startup
 await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;`).catch(() => {});
+await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token TEXT;`).catch(() => {});
+await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires TEXT;`).catch(() => {});
+await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT false;`).catch(() => {});
+await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT;`).catch(() => {});
 await query(`CREATE TABLE IF NOT EXISTS contact_submissions (
   id TEXT PRIMARY KEY,
   type TEXT NOT NULL,
@@ -148,6 +175,10 @@ function rowToUser(row) {
     passedMissions: row.passed_missions || [],
     teamId: row.team_id || null, teamRole: row.team_role || null,
     isAdmin: row.is_admin || false,
+    emailVerified: row.email_verified || false,
+    verificationToken: row.verification_token || null,
+    passwordResetToken: row.password_reset_token || null,
+    passwordResetExpires: row.password_reset_expires || null,
   };
 }
 
@@ -157,7 +188,7 @@ function publicUser(u) {
     sbRunsThisMonth: u.sbRunsThisMonth, xp: u.xp, streak: u.streak,
     lastVisit: u.lastVisit, completedLessons: u.completedLessons,
     passedMissions: u.passedMissions, teamId: u.teamId || null, teamRole: u.teamRole || null,
-    isAdmin: u.isAdmin || false,
+    isAdmin: u.isAdmin || false, emailVerified: u.emailVerified || false,
   };
 }
 
@@ -289,14 +320,18 @@ app.post('/api/signup', async (req, res) => {
   if (existing) return res.status(409).json({ error: 'Email already registered' });
   const id = randomUUID();
   const passwordHash = await bcrypt.hash(password, 10);
+  const verificationToken = randomBytes(32).toString('hex');
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
   await query(
-    `INSERT INTO users (id, name, email, password_hash, plan, sb_runs_this_month, sb_reset_month, xp, streak, last_visit, completed_lessons, passed_missions, team_id, team_role)
-     VALUES ($1,$2,$3,$4,'free',0,$5,0,0,'','[]','[]',NULL,NULL)`,
-    [id, name, email.toLowerCase(), passwordHash, monthKey]
+    `INSERT INTO users (id, name, email, password_hash, plan, sb_runs_this_month, sb_reset_month, xp, streak, last_visit, completed_lessons, passed_missions, team_id, team_role, email_verified, verification_token)
+     VALUES ($1,$2,$3,$4,'free',0,$5,0,0,'','[]','[]',NULL,NULL,false,$6)`,
+    [id, name, email.toLowerCase(), passwordHash, monthKey, verificationToken]
   );
   const user = await getUser(id);
+  const verifyUrl = `${BASE_URL}/api/verify-email?token=${verificationToken}`;
+  await sendEmail(email.toLowerCase(), 'Verify your PromptCraft email',
+    `<p>Hi ${name},</p><p>Thanks for signing up for PromptCraft! Click below to verify your email address.</p><p><a href="${verifyUrl}" style="background:#6C63FF;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Verify Email</a></p><p>Or copy this link: ${verifyUrl}</p>`);
   const token = jwt.sign({ id, email: user.email, name }, JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, user: publicUser(user) });
 });
@@ -308,7 +343,7 @@ app.post('/api/login', async (req, res) => {
   const row = await queryOne('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
   if (!row) return res.status(401).json({ error: 'Invalid email or password' });
   const user = rowToUser(row);
-  if (!user.passwordHash) return res.status(401).json({ error: 'This account uses social login. Please sign in with Google or Microsoft.' });
+  if (!user.passwordHash) return res.status(401).json({ error: 'No password set for this account. Use "Forgot password?" to create one, or sign in with Google or Microsoft.' });
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
   await checkMonthReset(user);
@@ -634,6 +669,13 @@ app.post('/api/invites/:token/accept', requireAuth, async (req, res) => {
   if (!row) return res.status(404).json({ error: 'Invalid invite link' });
   if (row.used_by) return res.status(410).json({ error: 'This invite has already been used' });
   if (new Date(row.expires_at) < new Date()) return res.status(410).json({ error: 'This invite has expired' });
+  const teamSettingsRow = await queryOne('SELECT settings FROM teams WHERE id = $1', [row.team_id]);
+  const maxMembers = teamSettingsRow?.settings?.maxMembers;
+  if (maxMembers) {
+    const countRes = await query('SELECT COUNT(*) FROM team_members WHERE team_id = $1', [row.team_id]);
+    const current = parseInt(countRes.rows[0].count);
+    if (current >= maxMembers) return res.status(403).json({ error: `This team is full (${maxMembers} member limit)` });
+  }
   const memberId = 'tm_' + randomUUID();
   await query(
     'INSERT INTO team_members (id, team_id, user_id, role, joined_at) VALUES ($1,$2,$3,$4,$5)',
@@ -901,8 +943,151 @@ app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
   res.json({ success: true });
 });
 
+// GET /api/admin/teams
+app.get('/api/admin/teams', requireAdmin, async (req, res) => {
+  const result = await query(`
+    SELECT t.id, t.name, t.owner_id, t.created_at, t.settings,
+           u.name AS owner_name, u.email AS owner_email,
+           (SELECT COUNT(*) FROM team_members WHERE team_id = t.id)::int AS member_count
+    FROM teams t JOIN users u ON u.id = t.owner_id
+    ORDER BY t.created_at DESC
+  `);
+  res.json(result.rows.map(r => ({
+    id: r.id, name: r.name, ownerId: r.owner_id, ownerName: r.owner_name,
+    ownerEmail: r.owner_email, memberCount: r.member_count,
+    maxMembers: r.settings?.maxMembers || null, createdAt: r.created_at,
+  })));
+});
+
+// POST /api/admin/create-team
+app.post('/api/admin/create-team', requireAdmin, async (req, res) => {
+  const { userId, teamName, maxMembers } = req.body;
+  if (!userId || !teamName) return res.status(400).json({ error: 'userId and teamName required' });
+  const user = await getUser(userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (user.teamId) return res.status(409).json({ error: `${user.name} is already on a team` });
+  const max = parseInt(maxMembers) || null;
+  const teamId = 'team_' + randomUUID();
+  const now = new Date().toISOString();
+  const settings = max ? { maxMembers: max } : {};
+  await query(
+    'INSERT INTO teams (id, name, owner_id, created_at, settings, assigned_categories) VALUES ($1,$2,$3,$4,$5,$6)',
+    [teamId, teamName.trim(), userId, now, JSON.stringify(settings), JSON.stringify({})]
+  );
+  const memberId = 'tm_' + randomUUID();
+  await query(
+    'INSERT INTO team_members (id, team_id, user_id, role, joined_at) VALUES ($1,$2,$3,$4,$5)',
+    [memberId, teamId, userId, 'owner', now]
+  );
+  await query('UPDATE users SET team_id = $1, team_role = $2 WHERE id = $3', [teamId, 'owner', userId]);
+  res.json({ success: true, teamId, teamName: teamName.trim() });
+});
+
+// DELETE /api/admin/teams/:id
+app.delete('/api/admin/teams/:id', requireAdmin, async (req, res) => {
+  const teamId = req.params.id;
+  const teamRow = await queryOne('SELECT id FROM teams WHERE id = $1', [teamId]);
+  if (!teamRow) return res.status(404).json({ error: 'Team not found' });
+  // Detach all members
+  await query('UPDATE users SET team_id = NULL, team_role = NULL WHERE team_id = $1', [teamId]);
+  await query('DELETE FROM team_members WHERE team_id = $1', [teamId]);
+  await query('DELETE FROM team_invites WHERE team_id = $1', [teamId]);
+  await query('DELETE FROM team_prompts WHERE team_id = $1', [teamId]);
+  await query('DELETE FROM teams WHERE id = $1', [teamId]);
+  res.json({ success: true });
+});
+
+// PUT /api/admin/teams/:id/max-members
+app.put('/api/admin/teams/:id/max-members', requireAdmin, async (req, res) => {
+  const { maxMembers } = req.body;
+  const max = parseInt(maxMembers) || null;
+  const teamRow = await queryOne('SELECT settings FROM teams WHERE id = $1', [req.params.id]);
+  if (!teamRow) return res.status(404).json({ error: 'Team not found' });
+  const settings = { ...(teamRow.settings || {}), maxMembers: max };
+  await query('UPDATE teams SET settings = $1 WHERE id = $2', [JSON.stringify(settings), req.params.id]);
+  res.json({ success: true, maxMembers: max });
+});
+
+// GET /api/leaderboard?tab=weekly|alltime
+app.get('/api/leaderboard', requireAuth, async (req, res) => {
+  const tab = req.query.tab === 'alltime' ? 'alltime' : 'weekly';
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const sql = tab === 'weekly'
+    ? `SELECT id, name, xp, streak, completed_lessons FROM users WHERE last_visit >= $1 ORDER BY xp DESC LIMIT 10`
+    : `SELECT id, name, xp, streak, completed_lessons FROM users ORDER BY xp DESC LIMIT 10`;
+  const params = tab === 'weekly' ? [sevenDaysAgo] : [];
+  const result = await query(sql, params);
+  const rows = result.rows.map(r => {
+    const lessons = Array.isArray(r.completed_lessons) ? r.completed_lessons.length : 0;
+    const badge = lessons >= 15 ? 'Master' : lessons >= 10 ? 'Advanced' : lessons >= 5 ? 'Core' : lessons >= 1 ? 'Foundations' : 'Learner';
+    return { id: r.id, name: r.name, xp: r.xp || 0, streak: r.streak || 0, badge };
+  });
+  res.json(rows);
+});
+
+// POST /api/forgot-password
+app.post('/api/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  // Always respond ok to prevent user enumeration
+  const user = await queryOne('SELECT id, name FROM users WHERE email = $1', [email.toLowerCase()]);
+  if (user) {
+    const token = randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+    await query('UPDATE users SET password_reset_token = $1, password_reset_expires = $2 WHERE id = $3', [token, expires, user.id]);
+    const resetUrl = `${BASE_URL}/?reset_token=${token}`;
+    await sendEmail(email.toLowerCase(), 'Reset your PromptCraft password',
+      `<p>Hi ${user.name},</p><p>Click below to reset your PromptCraft password. This link expires in 1 hour.</p><p><a href="${resetUrl}" style="background:#6C63FF;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Reset Password</a></p><p>Or copy this link: ${resetUrl}</p><p>If you didn't request this, you can safely ignore this email.</p>`);
+  }
+  res.json({ success: true });
+});
+
+// POST /api/reset-password
+app.post('/api/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: 'token and newPassword required' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  const user = await queryOne('SELECT id, password_reset_expires FROM users WHERE password_reset_token = $1', [token]);
+  if (!user) return res.status(400).json({ error: 'Invalid or expired reset link' });
+  if (!user.password_reset_expires || new Date(user.password_reset_expires) < new Date())
+    return res.status(400).json({ error: 'Reset link has expired' });
+  const hash = await bcrypt.hash(newPassword, 10);
+  await query('UPDATE users SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL WHERE id = $2', [hash, user.id]);
+  res.json({ success: true });
+});
+
+// GET /api/verify-email?token=xxx
+app.get('/api/verify-email', async (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.redirect('/?verified=0');
+  const user = await queryOne('SELECT id FROM users WHERE verification_token = $1', [token]);
+  if (!user) return res.redirect('/?verified=0');
+  await query('UPDATE users SET email_verified = true, verification_token = NULL WHERE id = $1', [user.id]);
+  res.redirect('/?verified=1');
+});
+
+// POST /api/resend-verification
+app.post('/api/resend-verification', requireAuth, async (req, res) => {
+  const user = await getUser(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (user.emailVerified) return res.json({ success: true, alreadyVerified: true });
+  const verificationToken = randomBytes(32).toString('hex');
+  await query('UPDATE users SET verification_token = $1 WHERE id = $2', [verificationToken, user.id]);
+  const verifyUrl = `${BASE_URL}/api/verify-email?token=${verificationToken}`;
+  await sendEmail(user.email, 'Verify your PromptCraft email',
+    `<p>Hi ${user.name},</p><p>Click below to verify your email address.</p><p><a href="${verifyUrl}" style="background:#6C63FF;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Verify Email</a></p><p>Or copy this link: ${verifyUrl}</p>`);
+  res.json({ success: true });
+});
+
+// GET /cert/:id — public shareable certificate page
+app.get('/cert/:id', async (req, res) => {
+  const row = await queryOne('SELECT c.*, u.name AS user_name FROM certificates c JOIN users u ON u.id = c.user_id WHERE c.id = $1', [req.params.id]);
+  if (!row) return res.status(404).send('<h1>Certificate not found</h1>');
+  const earnedDate = new Date(row.earned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PromptCraft Certificate — ${row.user_name}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f13;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}.frame{background:#1a1a24;border:2px solid #6C63FF;border-radius:16px;padding:56px 48px;max-width:540px;width:100%;text-align:center;position:relative}.label{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:#888;margin-bottom:28px}.name{font-size:36px;font-weight:800;color:#fff;margin-bottom:10px}.sub{font-size:13px;color:#888;margin-bottom:10px}.track{font-size:22px;font-weight:700;color:#6C63FF;margin-bottom:24px}.divider{width:60px;height:2px;background:#6C63FF;margin:0 auto 20px}.date{font-size:13px;color:#888;margin-bottom:8px}.certid{font-size:10px;color:#555;margin-bottom:28px}.brand{font-size:13px;font-weight:700;color:#6C63FF;margin-top:8px}@media print{body{background:#fff}.frame{border-color:#6C63FF;background:#fff}.name,.brand{color:#6C63FF}.sub,.date,.certid{color:#666}.label{color:#999}}</style></head><body><div class="frame"><div class="label">Certificate of Completion</div><div class="name">${row.user_name}</div><div class="sub">has successfully completed</div><div class="track">${row.category_name || row.category_id || 'Prompt Engineering'}</div><div class="divider"></div><div class="date">Completed on ${earnedDate}</div><div class="certid">Certificate ID: ${row.id}</div><div class="brand">PromptCraft</div></div></body></html>`);
+});
+
 // ── OAuth ─────────────────────────────────────────────────────────────────
-const BASE_URL = process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const MS_CLIENT_ID = process.env.MS_CLIENT_ID;
@@ -915,8 +1100,8 @@ async function oauthFindOrCreateUser(email, name) {
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
   await query(
-    `INSERT INTO users (id, name, email, password_hash, plan, sb_runs_this_month, sb_reset_month, xp, streak, last_visit, completed_lessons, passed_missions, team_id, team_role)
-     VALUES ($1,$2,$3,NULL,'free',0,$4,0,0,'','[]','[]',NULL,NULL)`,
+    `INSERT INTO users (id, name, email, password_hash, plan, sb_runs_this_month, sb_reset_month, xp, streak, last_visit, completed_lessons, passed_missions, team_id, team_role, email_verified)
+     VALUES ($1,$2,$3,NULL,'free',0,$4,0,0,'','[]','[]',NULL,NULL,true)`,
     [id, name, email.toLowerCase(), monthKey]
   );
   return await getUser(id);

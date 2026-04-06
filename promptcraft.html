@@ -4215,6 +4215,14 @@
           <div class="auth-field"><label>Password</label><div style="position:relative"><input type="password" id="loginPassword" placeholder="Your password" autocomplete="current-password" style="width:100%;box-sizing:border-box;padding-right:44px"><button type="button" onclick="togglePw('loginPassword',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0">Show</button></div></div>
           <button class="btn-auth" onclick="handleLogin()">Log In</button>
           <div class="auth-error" id="loginError"></div>
+          <div id="forgotPwArea" style="margin-top:8px">
+            <button type="button" onclick="showForgotPassword()" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0;text-decoration:underline">Forgot password?</button>
+          </div>
+          <div id="forgotPwForm" style="display:none;margin-top:10px">
+            <input type="email" id="forgotPwEmail" placeholder="Enter your email" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;box-sizing:border-box">
+            <button type="button" id="forgotPwBtn" onclick="handleForgotPassword()" style="margin-top:8px;width:100%;padding:9px;border-radius:6px;background:var(--accent-bg);color:var(--accent-text);border:none;cursor:pointer;font-size:14px;font-weight:600">Send Reset Link</button>
+            <div id="forgotPwMsg" style="font-size:12px;margin-top:6px;color:var(--muted)"></div>
+          </div>
           <div class="auth-divider">or continue with</div>
           <button class="btn-oauth" onclick="window.location='/auth/google'">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908C16.658 14.251 17.64 11.943 17.64 9.2Z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58Z"/></svg>
@@ -4615,7 +4623,7 @@
             <div class="plan-divider"></div>
             <ul class="plan-features">
               <li>All five tiers unlocked</li>
-              <li>140 AI-powered sandbox <runs>
+              <li>200 AI-powered sandbox <runs>
                   <month></month>
               </li>
               <li>AI Grader &amp; Dissector</li>
@@ -4926,6 +4934,7 @@
         <div class="cert-actions">
           <button class="btn-ghost"
             onclick="document.getElementById('certificateModal').classList.remove('open')">Close</button>
+          <button class="btn-ghost" id="certCopyLinkBtn" onclick="copyCertLink()">Copy Share Link</button>
           <button class="btn-primary" onclick="window.print()">Print / Save PDF</button>
         </div>
       </div>
@@ -5090,6 +5099,7 @@
         </div>
         <div style="display:flex;gap:8px;margin-bottom:24px">
           <button class="auth-tab active" id="adminTabUsers" onclick="switchAdminTab('users')">Users</button>
+          <button class="auth-tab" id="adminTabTeams" onclick="switchAdminTab('teams')">Teams</button>
           <button class="auth-tab" id="adminTabContacts" onclick="switchAdminTab('contacts')">Inquiries <span id="adminContactBadge" style="display:none;background:var(--accent);color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:4px"></span></button>
         </div>
 
@@ -5101,6 +5111,44 @@
             <table class="admin-table">
               <thead><tr><th>User</th><th>Email</th><th>Plan</th><th>Runs</th><th>XP</th><th>Lessons</th><th>Last Visit</th><th>Actions</th></tr></thead>
               <tbody id="adminUsersBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Teams tab -->
+        <div id="adminPanelTeams" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+            <div id="adminTeamsStats" style="display:flex;gap:16px"></div>
+            <button class="btn-primary" onclick="showCreateTeamForm()" style="font-size:13px;padding:9px 18px">+ Create Team for User</button>
+          </div>
+          <div id="createTeamForm" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px">
+            <div style="font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:14px">Create Team</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;flex-wrap:wrap">
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">User (name or email)</label>
+                <input id="createTeamUserSearch" type="text" placeholder="Search user…" oninput="filterCreateTeamUsers()" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;box-sizing:border-box">
+                <div id="createTeamUserResults" style="display:none;position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:8px;z-index:50;max-height:160px;overflow-y:auto;min-width:220px;box-shadow:var(--shadow-lg)"></div>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">Team Name</label>
+                <input id="createTeamName" type="text" placeholder="e.g. Acme Corp" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;box-sizing:border-box">
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">Max Members</label>
+                <input id="createTeamMax" type="number" min="1" placeholder="e.g. 10" style="width:90px;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;box-sizing:border-box">
+              </div>
+            </div>
+            <div id="createTeamSelectedUser" style="font-size:12px;color:var(--accent-text);margin-top:8px;min-height:16px"></div>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button class="btn-primary" onclick="adminCreateTeam()" style="font-size:13px;padding:9px 18px">Create Team</button>
+              <button class="btn-ghost" onclick="document.getElementById('createTeamForm').style.display='none'" style="font-size:13px;padding:9px 18px">Cancel</button>
+            </div>
+            <div id="createTeamErr" style="font-size:12px;color:#e55;margin-top:8px"></div>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Team</th><th>Owner</th><th>Members</th><th>Max Members</th><th>Created</th><th>Actions</th></tr></thead>
+              <tbody id="adminTeamsBody"></tbody>
             </table>
           </div>
         </div>
@@ -5191,18 +5239,37 @@
         const initials = authUser.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
         const runs = authUser.sbRunsThisMonth || 0;
         const isPro = authUser.plan === 'pro';
-        const limit = isPro ? 140 : FREE_LIMIT;
+        const limit = isPro ? 200 : FREE_LIMIT;
         const planLabel = isPro ? ' <span style="font-size:10px;color:var(--accent-text);font-weight:800">PRO</span>' : '';
         area.innerHTML = `<div class="nav-avatar" title="${authUser.name}" onclick="toggleAvatarMenu(event)">${initials}<div class="nav-avatar-menu" onclick="event.stopPropagation()"><div style="padding:8px 14px 8px;font-size:12px;color:var(--muted);font-weight:700">${authUser.name}${planLabel}</div><hr style="border:none;border-top:1px solid var(--border);margin:4px 8px"><button onclick="openSettings()">Settings</button><button onclick="handleSignout()">Sign Out</button></div></div>`;
         if (teamBtn) teamBtn.style.display = (authUser.teamRole === 'owner' || authUser.teamRole === 'admin') ? '' : 'none';
         const adminBtn = document.getElementById('adminNavBtn');
         if (adminBtn) adminBtn.style.display = authUser.isAdmin ? '' : 'none';
+        // Email verification banner
+        let banner = document.getElementById('verifyEmailBanner');
+        if (!authUser.emailVerified && !authUser.isAdmin) {
+          if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'verifyEmailBanner';
+            banner.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:250;background:var(--bg);border:1px solid var(--border2);border-radius:10px;box-shadow:var(--shadow-lg,0 8px 32px rgba(0,0,0,.3));padding:12px 20px;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--text2);white-space:nowrap;max-width:calc(100vw - 32px)';
+            banner.innerHTML = `<span style="font-size:15px">✉️</span><span>Verify your email to keep your account secure.</span><button onclick="resendVerification(this)" style="background:var(--accent-bg);color:var(--accent-text);border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;padding:5px 12px;flex-shrink:0">Resend</button><button onclick="document.getElementById('verifyEmailBanner').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 0 0 4px;flex-shrink:0">✕</button>`;
+            document.body.appendChild(banner);
+          }
+        } else if (banner) { banner.remove(); }
       } else {
         area.innerHTML = '<button class="btn-nav" onclick="openAuth()">Sign In</button>';
         if (teamBtn) teamBtn.style.display = 'none';
         const adminBtn = document.getElementById('adminNavBtn');
         if (adminBtn) adminBtn.style.display = 'none';
+        const banner = document.getElementById('verifyEmailBanner');
+        if (banner) banner.remove();
       }
+    }
+
+    async function resendVerification(btn) {
+      btn.disabled = true; btn.textContent = 'Sent!';
+      try { await fetch('/api/resend-verification', { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() } }); } catch {}
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Resend'; }, 5000);
     }
 
     function toggleAvatarMenu(e) {
@@ -5215,6 +5282,11 @@
       const dd = document.getElementById('navDropdown');
       const burger = document.getElementById('navHamburger');
       if (dd && burger && !dd.contains(e.target) && e.target !== burger) dd.classList.remove('open');
+      // Close create-team user dropdown if clicked outside
+      const userResults = document.getElementById('createTeamUserResults');
+      const userSearch = document.getElementById('createTeamUserSearch');
+      if (userResults && userSearch && !userResults.contains(e.target) && e.target !== userSearch)
+        userResults.style.display = 'none';
     });
 
     function openAuth(tab) {
@@ -5275,6 +5347,28 @@
       } catch (e) { err.textContent = 'Could not connect to server.'; }
     }
 
+    function showForgotPassword() {
+      document.getElementById('forgotPwArea').style.display = 'none';
+      document.getElementById('forgotPwForm').style.display = '';
+      document.getElementById('forgotPwEmail').value = document.getElementById('loginEmail').value || '';
+      document.getElementById('forgotPwMsg').textContent = '';
+    }
+
+    async function handleForgotPassword() {
+      const email = document.getElementById('forgotPwEmail').value.trim();
+      const msg = document.getElementById('forgotPwMsg');
+      const btn = document.getElementById('forgotPwBtn');
+      msg.textContent = '';
+      if (!email) { msg.style.color = 'var(--error, #e55)'; msg.textContent = 'Enter your email address.'; return; }
+      btn.disabled = true; btn.textContent = 'Sending…';
+      try {
+        await fetch('/api/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+        msg.style.color = 'var(--muted)';
+        msg.textContent = 'If an account exists, a reset link has been sent.';
+      } catch (e) { msg.style.color = 'var(--error, #e55)'; msg.textContent = 'Could not connect.'; }
+      btn.disabled = false; btn.textContent = 'Send Reset Link';
+    }
+
     function handleSignout() {
       authUser = null;
       localStorage.removeItem('pc_token');
@@ -5326,7 +5420,7 @@
       if (authUser && data.sbRunsThisMonth !== undefined) {
         authUser.sbRunsThisMonth = data.sbRunsThisMonth;
         updateNavAuth();
-        const limit = data.limit || (authUser.plan === 'pro' ? 140 : FREE_LIMIT);
+        const limit = data.limit || (authUser.plan === 'pro' ? 200 : FREE_LIMIT);
         const el = document.getElementById('sbRunCount');
         if (el) el.textContent = `Runs: ${data.sbRunsThisMonth}/${limit}`;
       }
@@ -6455,32 +6549,6 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
       { prompt: 'Create a debate between two experts who strongly disagree about [AI/remote work/social media]. Give each side 3 compelling points and a final rebuttal. Stay steel-manned — both sides should be persuasive.', cat: 'Critical Thinking' }
     ];
 
-    const LEADERBOARD = {
-      weekly: [
-        { name: 'PromptWizard', badge: 'Master', xp: 1840, streak: 14 },
-        { name: 'AIAlchemist', badge: 'Advanced', xp: 1620, streak: 9 },
-        { name: 'NeuralNinja', badge: 'Advanced', xp: 1490, streak: 21 },
-        { name: 'ContextKing', badge: 'Core', xp: 1210, streak: 7 },
-        { name: 'YOU', badge: 'Learner', xp: 0, streak: 1, you: true },
-        { name: 'PromptPilot', badge: 'Core', xp: 980, streak: 4 },
-        { name: 'ToneTypist', badge: 'Core', xp: 870, streak: 6 },
-        { name: 'ChainThinker', badge: 'Foundations', xp: 730, streak: 3 },
-        { name: 'IterativeIvy', badge: 'Foundations', xp: 610, streak: 2 },
-        { name: 'NewcomerNex', badge: 'Foundations', xp: 420, streak: 1 }
-      ],
-      alltime: [
-        { name: 'PromptWizard', badge: 'Master', xp: 24800, streak: 89 },
-        { name: 'ContextKing', badge: 'Advanced', xp: 19200, streak: 42 },
-        { name: 'AIAlchemist', badge: 'Advanced', xp: 17600, streak: 31 },
-        { name: 'NeuralNinja', badge: 'Advanced', xp: 15900, streak: 67 },
-        { name: 'ToneTypist', badge: 'Core', xp: 12100, streak: 18 },
-        { name: 'YOU', badge: 'Learner', xp: 0, streak: 1, you: true },
-        { name: 'ChainThinker', badge: 'Core', xp: 9800, streak: 15 },
-        { name: 'PromptPilot', badge: 'Core', xp: 8400, streak: 9 },
-        { name: 'IterativeIvy', badge: 'Foundations', xp: 6200, streak: 7 },
-        { name: 'NewcomerNex', badge: 'Foundations', xp: 3100, streak: 3 }
-      ]
-    };
 
     const RESPONSES = [
       { keywords: ['email', 'write', 'send'], resp: 'Subject: Team Update — Q3 Launch & Next Steps\n\nHey team, quick recap from this morning\'s standup. Great news: the Q3 launch is on track. Action items are logged in Jira — check your assignments and update statuses by EOD. Our next sync is Thursday at 10am. Keep up the fantastic momentum!\n\nBest, [Your Name]' },
@@ -6601,12 +6669,15 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
         const total = tiers.reduce((s, t) => s + t.lessons.length, 0);
         const done = tiers.reduce((s, t) => s + t.lessons.filter(l => state.completedLessons.includes(l.id)).length, 0);
         const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-        const locked = isCategoryLockedByTeam(c.id);
-        return `<div class="cat-card${c.id === cat ? ' active' : ''}${locked ? ' team-locked' : ''}" ${locked ? '' : 'onclick="selectCategory(\'' + c.id + '\')"'}>
-      <span class="cat-name">${c.name}${locked ? ' 🔒' : ''}</span>
+        const teamLocked = isCategoryLockedByTeam(c.id);
+        const proLocked = c.id !== 'core' && (!authUser || (authUser.plan !== 'pro' && !authUser.isAdmin));
+        const locked = teamLocked || proLocked;
+        const clickAction = locked ? (proLocked ? `openProInquiry()` : '') : `selectCategory('${c.id}')`;
+        return `<div class="cat-card${c.id === cat && !proLocked ? ' active' : ''}${teamLocked ? ' team-locked' : ''}${proLocked ? ' pro-locked' : ''}" ${locked ? (proLocked ? `onclick="${clickAction}"` : '') : `onclick="${clickAction}"`} style="${proLocked ? 'cursor:pointer;opacity:.75;' : ''}">
+      <span class="cat-name">${c.name}${teamLocked ? ' 🔒' : ''}${proLocked ? ' <span style="font-size:10px;font-weight:800;color:var(--accent-text);border:1px solid var(--accent-text);border-radius:3px;padding:1px 4px;vertical-align:middle">PRO</span>' : ''}</span>
       <div class="cat-progress-wrap">
-        <div class="cat-progress-bar"><div class="cat-progress-fill" style="width:${pct}%"></div></div>
-        <span class="cat-progress">${done}/${total}</span>
+        <div class="cat-progress-bar"><div class="cat-progress-fill" style="width:${proLocked ? 0 : pct}%"></div></div>
+        <span class="cat-progress">${proLocked ? 'Pro only' : done + '/' + total}</span>
       </div>
     </div>`;
       }).join('');
@@ -7094,6 +7165,10 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
 
     // ── Sandbox tabs ──────────────────────────────────────────
     function switchSandboxTab(btn, tab) {
+      if (tab === 'dissect' && authUser && authUser.plan !== 'pro' && !authUser.isAdmin) {
+        openProInquiry();
+        return;
+      }
       document.querySelectorAll('.stab').forEach(s => s.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-before-after').style.display = tab === 'before-after' ? 'block' : 'none';
@@ -7123,7 +7198,7 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
         if (authUser && data.sbRunsThisMonth !== undefined) {
           authUser.sbRunsThisMonth = data.sbRunsThisMonth;
           updateNavAuth();
-          const limit = data.limit || (authUser.plan === 'pro' ? 140 : FREE_LIMIT);
+          const limit = data.limit || (authUser.plan === 'pro' ? 200 : FREE_LIMIT);
           const el = document.getElementById('sbRunCount');
           if (el) el.textContent = `Runs: ${data.sbRunsThisMonth}/${limit}`;
         }
@@ -7307,21 +7382,36 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
         }
       }
       const lbKey = (tab === 'alltime') ? 'alltime' : 'weekly';
-      const data = [...LEADERBOARD[lbKey]].map(r => ({ ...r }));
-      // Insert user's real XP
-      data.forEach(r => { if (r.you) { r.xp = state.xp; r.streak = state.streak; } });
-      data.sort((a, b) => b.xp - a.xp);
-      table.innerHTML = '';
-      data.forEach((r, i) => {
-        const s = window.teamData?.settings || {};
-        const row = document.createElement('div'); row.className = 'lb-row' + (r.you ? ' you' : '');
-        const initials = r.name.split(/(?=[A-Z])/).map(w => w[0]).join('').substring(0, 2).toUpperCase() || r.name.substring(0, 2).toUpperCase();
-        const rankDisp = i + 1;
-        const dispXp = s.showXP === false ? '***' : r.xp.toLocaleString();
-        const dispStreak = s.showStreaks === false ? '***' : r.streak;
-        row.innerHTML = `<div class="lb-rank ${i < 3 ? 'top' : ''}">${rankDisp}</div><div class="lb-user"><div class="lb-avatar">${initials}</div><div><div class="lb-name">${r.you ? 'You (' + r.name + ')' : r.name}</div><div class="lb-badge">${r.badge}</div></div></div><div class="lb-xp">${dispXp} XP</div><div class="lb-streak">${dispStreak} Days</div>`;
-        table.appendChild(row);
-      });
+      table.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted);font-size:14px">Loading…</div>';
+      try {
+        const res = await fetch('/api/leaderboard?tab=' + lbKey, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+        if (!res.ok) throw new Error('Failed');
+        let data = await res.json();
+        // Insert current user if not already in results
+        const inList = authUser && data.some(r => r.id === authUser.id);
+        if (authUser && !inList) {
+          const lessons = state.completedLessons.length;
+          const badge = lessons >= 15 ? 'Master' : lessons >= 10 ? 'Advanced' : lessons >= 5 ? 'Core' : lessons >= 1 ? 'Foundations' : 'Learner';
+          data.push({ id: authUser.id, name: authUser.name, xp: state.xp, streak: state.streak, badge, you: true });
+          data.sort((a, b) => b.xp - a.xp);
+        } else if (authUser) {
+          data = data.map(r => r.id === authUser.id ? { ...r, you: true, xp: state.xp, streak: state.streak } : r);
+          data.sort((a, b) => b.xp - a.xp);
+        }
+        table.innerHTML = '';
+        data.forEach((r, i) => {
+          const s = window.teamData?.settings || {};
+          const row = document.createElement('div'); row.className = 'lb-row' + (r.you ? ' you' : '');
+          const initials = r.name.substring(0, 2).toUpperCase();
+          const dispXp = s.showXP === false ? '***' : r.xp.toLocaleString();
+          const dispStreak = s.showStreaks === false ? '***' : r.streak;
+          row.innerHTML = `<div class="lb-rank ${i < 3 ? 'top' : ''}">${i + 1}</div><div class="lb-user"><div class="lb-avatar">${initials}</div><div><div class="lb-name">${r.you ? 'You (' + r.name + ')' : r.name}</div><div class="lb-badge">${r.badge}</div></div></div><div class="lb-xp">${dispXp} XP</div><div class="lb-streak">${dispStreak} Days</div>`;
+          table.appendChild(row);
+        });
+        if (data.length === 0) table.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:14px">No activity this week yet. Complete a lesson to appear here!</div>';
+      } catch (e) {
+        table.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:14px">Could not load leaderboard.</div>';
+      }
     }
 
     async function renderTeamLeaderboard() {
@@ -7400,10 +7490,10 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
         document.getElementById('settingsName').value = authUser.name || '';
         document.getElementById('settingsEmail').textContent = authUser.email || '';
         const isPro = authUser.plan === 'pro';
-        const limit = isPro ? 140 : FREE_LIMIT;
+        const limit = isPro ? 200 : FREE_LIMIT;
         const runs = authUser.sbRunsThisMonth || 0;
         const pct = Math.min(100, Math.round((runs / limit) * 100));
-        document.getElementById('planDesc').textContent = isPro ? 'Pro — 140 AI sandbox runs/month' : 'Free — 10 AI sandbox runs/month';
+        document.getElementById('planDesc').textContent = isPro ? 'Pro — 200 AI sandbox runs/month' : 'Free — 10 AI sandbox runs/month';
         document.getElementById('planBadge').textContent = isPro ? 'PRO' : 'FREE';
         document.getElementById('planBadge').style.background = isPro ? 'var(--accent-bg)' : 'var(--bg2)';
         document.getElementById('planBadge').style.color = isPro ? 'var(--accent-text)' : 'var(--text2)';
@@ -8009,12 +8099,24 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
       } catch (e) { }
     }
 
+    let _currentCertId = null;
     function openCertificateModal(cert) {
+      _currentCertId = cert.id;
       document.getElementById('certName').textContent = authUser?.name || 'Learner';
       document.getElementById('certTrack').textContent = cert.categoryName || cert.categoryId || 'Prompt Engineering';
       document.getElementById('certDate').textContent = 'Completed on ' + new Date(cert.earnedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       document.getElementById('certId').textContent = 'Certificate ID: ' + cert.id;
+      const copyBtn = document.getElementById('certCopyLinkBtn');
+      if (copyBtn) { copyBtn.textContent = 'Copy Share Link'; copyBtn.disabled = false; }
       document.getElementById('certificateModal').classList.add('open');
+    }
+    function copyCertLink() {
+      if (!_currentCertId) return;
+      const url = window.location.origin + '/cert/' + _currentCertId;
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('certCopyLinkBtn');
+        if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy Share Link'; }, 2000); }
+      }).catch(() => {});
     }
 
     // ── Auth modal close on overlay click ─────────────────────
@@ -8106,10 +8208,13 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
 
     function switchAdminTab(tab) {
       document.getElementById('adminPanelUsers').style.display = tab === 'users' ? '' : 'none';
+      document.getElementById('adminPanelTeams').style.display = tab === 'teams' ? '' : 'none';
       document.getElementById('adminPanelContacts').style.display = tab === 'contacts' ? '' : 'none';
       document.getElementById('adminTabUsers').classList.toggle('active', tab === 'users');
+      document.getElementById('adminTabTeams').classList.toggle('active', tab === 'teams');
       document.getElementById('adminTabContacts').classList.toggle('active', tab === 'contacts');
       if (tab === 'contacts') loadAdminContacts();
+      if (tab === 'teams') loadAdminTeams();
     }
 
     async function loadAdminContacts() {
@@ -8212,14 +8317,183 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
       await loadAdminUsers();
     }
 
-    // Handle OAuth redirect — save token from URL then clean up
+    // ── Admin Teams ───────────────────────────────────────────
+    let _adminTeams = [];
+    let _createTeamSelectedUserId = null;
+
+    async function loadAdminTeams() {
+      try {
+        const res = await fetch('/api/admin/teams', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+        if (!res.ok) return;
+        _adminTeams = await res.json();
+        renderAdminTeams(_adminTeams);
+      } catch (e) { console.error(e); }
+    }
+
+    function renderAdminTeams(teams) {
+      const statsEl = document.getElementById('adminTeamsStats');
+      statsEl.innerHTML = `
+        <div class="admin-stat"><div class="admin-stat-num">${teams.length}</div><div class="admin-stat-label">Teams</div></div>
+        <div class="admin-stat"><div class="admin-stat-num">${teams.reduce((s, t) => s + t.memberCount, 0)}</div><div class="admin-stat-label">Total Members</div></div>`;
+      const tbody = document.getElementById('adminTeamsBody');
+      if (!teams.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">No teams yet.</td></tr>'; return; }
+      tbody.innerHTML = teams.map(t => {
+        const maxDisplay = t.maxMembers ? `${t.memberCount} / ${t.maxMembers}` : t.memberCount;
+        const maxInput = `<input type="number" min="1" value="${t.maxMembers || ''}" placeholder="No limit" onchange="adminSetMaxMembers('${t.id}', this.value)" style="width:80px;padding:5px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center">`;
+        const created = new Date(t.createdAt).toLocaleDateString();
+        return `<tr>
+          <td style="font-weight:600">${t.name}</td>
+          <td><div style="font-size:13px">${t.ownerName}</div><div style="font-size:11px;color:var(--muted)">${t.ownerEmail}</div></td>
+          <td>${maxDisplay}</td>
+          <td>${maxInput}</td>
+          <td style="color:var(--muted);font-size:12px">${created}</td>
+          <td><button class="admin-btn-delete" onclick="adminDeleteTeam('${t.id}','${t.name.replace(/'/g,"\\'")}')">Delete</button></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function showCreateTeamForm() {
+      _createTeamSelectedUserId = null;
+      document.getElementById('createTeamUserSearch').value = '';
+      document.getElementById('createTeamName').value = '';
+      document.getElementById('createTeamMax').value = '';
+      document.getElementById('createTeamSelectedUser').textContent = '';
+      document.getElementById('createTeamErr').textContent = '';
+      document.getElementById('createTeamUserResults').style.display = 'none';
+      document.getElementById('createTeamForm').style.display = '';
+    }
+
+    function filterCreateTeamUsers() {
+      const q = document.getElementById('createTeamUserSearch').value.toLowerCase();
+      const resultsEl = document.getElementById('createTeamUserResults');
+      if (!q) { resultsEl.style.display = 'none'; return; }
+      const matches = _adminUsers.filter(u => !u.isAdmin && (u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))).slice(0, 6);
+      if (!matches.length) { resultsEl.style.display = 'none'; return; }
+      resultsEl.style.display = '';
+      resultsEl.innerHTML = matches.map(u =>
+        `<div onclick="selectCreateTeamUser('${u.id}','${u.name.replace(/'/g,"\\'")}','${u.email}')" style="padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+          <span style="font-weight:600">${u.name}</span> <span style="color:var(--muted)">${u.email}</span>${u.teamId ? ' <span style="color:#e55;font-size:11px">(on a team)</span>' : ''}
+        </div>`).join('');
+    }
+
+    function selectCreateTeamUser(id, name, email) {
+      _createTeamSelectedUserId = id;
+      document.getElementById('createTeamUserSearch').value = name;
+      document.getElementById('createTeamSelectedUser').textContent = '✓ Selected: ' + name + ' (' + email + ')';
+      document.getElementById('createTeamUserResults').style.display = 'none';
+    }
+
+    async function adminCreateTeam() {
+      const err = document.getElementById('createTeamErr');
+      err.textContent = '';
+      if (!_createTeamSelectedUserId) { err.textContent = 'Select a user first.'; return; }
+      const teamName = document.getElementById('createTeamName').value.trim();
+      if (!teamName) { err.textContent = 'Enter a team name.'; return; }
+      const maxMembers = document.getElementById('createTeamMax').value || null;
+      const btn = event.target; btn.disabled = true; btn.textContent = 'Creating…';
+      try {
+        const res = await fetch('/api/admin/create-team', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          body: JSON.stringify({ userId: _createTeamSelectedUserId, teamName, maxMembers }),
+        });
+        const data = await res.json();
+        if (!res.ok) { err.textContent = data.error || 'Failed.'; btn.disabled = false; btn.textContent = 'Create Team'; return; }
+        document.getElementById('createTeamForm').style.display = 'none';
+        await loadAdminTeams();
+        await loadAdminUsers();
+      } catch (e) { err.textContent = 'Could not connect.'; btn.disabled = false; btn.textContent = 'Create Team'; }
+    }
+
+    async function adminSetMaxMembers(teamId, value) {
+      const maxMembers = parseInt(value) || null;
+      await fetch(`/api/admin/teams/${teamId}/max-members`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+        body: JSON.stringify({ maxMembers }),
+      });
+      await loadAdminTeams();
+    }
+
+    async function adminDeleteTeam(teamId, name) {
+      if (!confirm(`Delete team "${name}"? Members will be removed from the team.`)) return;
+      // Remove all members, then delete team
+      const membersRes = await fetch(`/api/teams/${teamId}/members`, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+      // Just delete via a new admin endpoint — use existing team leave approach isn't ideal, so call the backend
+      const res = await fetch(`/api/admin/teams/${teamId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + getToken() },
+      });
+      if (res.ok) { await loadAdminTeams(); await loadAdminUsers(); }
+    }
+
+    // Handle OAuth redirect, reset token, and email verification
     (function () {
       const p = new URLSearchParams(window.location.search);
       const t = p.get('token');
       if (t) { localStorage.setItem('pc_token', t); window.history.replaceState({}, '', '/'); }
       else if (p.get('auth_error')) { window.history.replaceState({}, '', '/'); }
+
+      const resetToken = p.get('reset_token');
+      if (resetToken) {
+        window.history.replaceState({}, '', '/');
+        // Show reset modal after DOM is ready
+        window._pendingResetToken = resetToken;
+      }
+
+      if (p.get('verified') === '1') {
+        window.history.replaceState({}, '', '/');
+        window._showVerifiedToast = true;
+      }
     })();
-    restoreSession().then(() => { if (!authUser) checkInviteParam(); });
+
+    function openResetModal(token) {
+      const overlay = document.createElement('div');
+      overlay.id = 'resetPwOverlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+      overlay.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:380px;width:100%">
+        <h3 style="margin-bottom:16px;font-size:18px">Reset Password</h3>
+        <div style="margin-bottom:12px"><label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">New Password</label><input type="password" id="resetPwNew" placeholder="At least 6 characters" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;box-sizing:border-box"></div>
+        <div style="margin-bottom:16px"><label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px">Confirm Password</label><input type="password" id="resetPwConfirm" placeholder="Same as above" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;box-sizing:border-box"></div>
+        <div id="resetPwErr" style="font-size:12px;color:#e55;margin-bottom:10px"></div>
+        <button id="resetPwSubmitBtn" onclick="submitResetPassword('${token}')" style="width:100%;padding:10px;border-radius:6px;background:var(--accent-bg);color:var(--accent-text);border:none;cursor:pointer;font-size:14px;font-weight:700">Set New Password</button>
+      </div>`;
+      document.body.appendChild(overlay);
+    }
+
+    async function submitResetPassword(token) {
+      const newPw = document.getElementById('resetPwNew').value;
+      const confirm = document.getElementById('resetPwConfirm').value;
+      const err = document.getElementById('resetPwErr');
+      const btn = document.getElementById('resetPwSubmitBtn');
+      err.textContent = '';
+      if (!newPw || !confirm) { err.textContent = 'Both fields required.'; return; }
+      if (newPw !== confirm) { err.textContent = 'Passwords do not match.'; return; }
+      if (newPw.length < 6) { err.textContent = 'Minimum 6 characters.'; return; }
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const res = await fetch('/api/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, newPassword: newPw }) });
+        const data = await res.json();
+        if (!res.ok) { err.textContent = data.error || 'Failed.'; btn.disabled = false; btn.textContent = 'Set New Password'; return; }
+        document.getElementById('resetPwOverlay').remove();
+        const toast = document.getElementById('xpToast');
+        toast.textContent = 'Password updated! Log in with your new password.';
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); openAuth('login'); }, 2500);
+      } catch (e) { err.textContent = 'Could not connect.'; btn.disabled = false; btn.textContent = 'Set New Password'; }
+    }
+
+    restoreSession().then(() => {
+      if (!authUser) checkInviteParam();
+      if (window._pendingResetToken) { openResetModal(window._pendingResetToken); window._pendingResetToken = null; }
+      if (window._showVerifiedToast) {
+        window._showVerifiedToast = false;
+        const toast = document.getElementById('xpToast');
+        toast.textContent = 'Email verified!';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+      }
+    });
   </script>
 </body>
 

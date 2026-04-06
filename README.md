@@ -61,7 +61,7 @@ A three-step breakdown of the learning flow: learn the concept, practice in the 
 
 ### Pricing
 
-PromptCraft offers a free tier with the first two skill tiers and 10 AI sandbox runs per month. The Pro plan unlocks all five tiers, 140 AI runs per month, AI-graded Pro Apply Challenges, and the ability to publish prompts to the community library.
+PromptCraft offers a free tier with the first two skill tiers and 10 AI sandbox runs per month. The Pro plan unlocks all five tiers, 200 AI runs per month, AI-graded Pro Apply Challenges, and the ability to publish prompts to the community library.
 
 ![Pricing](screenshots/03-pricing.png)
 
