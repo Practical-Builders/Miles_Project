@@ -48,6 +48,16 @@ async function queryOne(sql, params = []) {
 
 // Create tables and migrate schema on startup
 await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;`).catch(() => {});
+await query(`CREATE TABLE IF NOT EXISTS contact_submissions (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  business_name TEXT,
+  num_accounts TEXT,
+  message TEXT,
+  created_at TEXT NOT NULL
+);`).catch(() => {});
 await query(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
@@ -283,7 +293,7 @@ app.post('/api/signup', async (req, res) => {
   const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
   await query(
     `INSERT INTO users (id, name, email, password_hash, plan, sb_runs_this_month, sb_reset_month, xp, streak, last_visit, completed_lessons, passed_missions, team_id, team_role)
-     VALUES ($1,$2,$3,$4,'free',0,$5,0,1,'','[]','[]',NULL,NULL)`,
+     VALUES ($1,$2,$3,$4,'free',0,$5,0,0,'','[]','[]',NULL,NULL)`,
     [id, name, email.toLowerCase(), passwordHash, monthKey]
   );
   const user = await getUser(id);
@@ -824,6 +834,35 @@ async function requireAdmin(req, res, next) {
   }
 }
 
+// POST /api/contact
+app.post('/api/contact', async (req, res) => {
+  const { type, name, email, businessName, numAccounts, message } = req.body;
+  if (!type || !name || !email) return res.status(400).json({ error: 'type, name, and email are required' });
+  const id = 'con_' + randomUUID();
+  await query(
+    'INSERT INTO contact_submissions (id, type, name, email, business_name, num_accounts, message, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+    [id, type, name.trim(), email.trim().toLowerCase(), businessName?.trim() || null, numAccounts?.trim() || null, message?.trim() || null, new Date().toISOString()]
+  );
+  res.json({ success: true });
+});
+
+// DELETE /api/admin/contacts/:id
+app.delete('/api/admin/contacts/:id', requireAdmin, async (req, res) => {
+  const result = await query('DELETE FROM contact_submissions WHERE id = $1', [req.params.id]);
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+  res.json({ success: true });
+});
+
+// GET /api/admin/contacts
+app.get('/api/admin/contacts', requireAdmin, async (req, res) => {
+  const result = await query('SELECT * FROM contact_submissions ORDER BY created_at DESC');
+  res.json(result.rows.map(r => ({
+    id: r.id, type: r.type, name: r.name, email: r.email,
+    businessName: r.business_name, numAccounts: r.num_accounts,
+    message: r.message, createdAt: r.created_at,
+  })));
+});
+
 // GET /api/admin/users
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
   const result = await query('SELECT * FROM users ORDER BY is_admin DESC, name ASC');
@@ -877,7 +916,7 @@ async function oauthFindOrCreateUser(email, name) {
   const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
   await query(
     `INSERT INTO users (id, name, email, password_hash, plan, sb_runs_this_month, sb_reset_month, xp, streak, last_visit, completed_lessons, passed_missions, team_id, team_role)
-     VALUES ($1,$2,$3,NULL,'free',0,$4,0,1,'','[]','[]',NULL,NULL)`,
+     VALUES ($1,$2,$3,NULL,'free',0,$4,0,0,'','[]','[]',NULL,NULL)`,
     [id, name, email.toLowerCase(), monthKey]
   );
   return await getUser(id);

@@ -2765,6 +2765,28 @@
       border-color: var(--text)
     }
 
+    /* Contact / Inquiry forms */
+    .inquiry-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 40px; width: 100%; max-width: 460px; box-shadow: var(--shadow-lg); transform: translateY(8px); transition: transform .2s }
+    .auth-overlay.open .inquiry-modal { transform: translateY(0) }
+    .inquiry-title { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--text); margin-bottom: 8px }
+    .inquiry-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6 }
+    .inquiry-sub a { color: var(--accent-text); text-decoration: none }
+    .inquiry-sub a:hover { text-decoration: underline }
+    .inquiry-field { margin-bottom: 14px }
+    .inquiry-field label { display: block; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px }
+    .inquiry-field input, .inquiry-field textarea, .inquiry-field select { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px; outline: none; transition: border .15s; box-sizing: border-box }
+    .inquiry-field input:focus, .inquiry-field textarea:focus { border-color: var(--accent-text) }
+    .inquiry-field textarea { resize: vertical; min-height: 100px }
+    .inquiry-success { text-align: center; padding: 16px 0 }
+    .inquiry-success h3 { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--text); margin-bottom: 8px }
+    .inquiry-success p { font-size: 14px; color: var(--muted) }
+
+    /* Contact view */
+    .contact-view { max-width: 600px; margin: 0 auto; padding: 80px 24px }
+    .contact-view h1 { font-family: 'DM Serif Display', serif; font-size: 36px; color: var(--text); margin-bottom: 10px }
+    .contact-view .contact-sub { font-size: 16px; color: var(--muted); margin-bottom: 40px; line-height: 1.6 }
+    .contact-form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px }
+
     /* Admin view */
     .admin-view { max-width: 1100px; margin: 0 auto; padding: 48px 24px }
     .admin-header { margin-bottom: 32px }
@@ -4361,11 +4383,10 @@
     <div class="view active" id="view-home">
       <section class="hero fade-up">
         <div class="hero-badge">
-          <div class="badge-dot"></div> The AI Prompting School
+          <div class="badge-dot"></div> The AI prompting School
         </div>
         <h1>Learn to speak<br>fluent <em>AI.</em></h1>
-        <p class="hero-sub">Master the art of prompting through hands-on missions, live feedback, and real results — not
-          passive reading.</p>
+        <p class="hero-sub">Master the art of prompting through hands-on missions, live feedback, and real results.</p>
         <div class="hero-actions">
           <button class="btn-primary" onclick="showView('learn')">Start Learning Free →</button>
           <button class="btn-ghost" onclick="showView('sandbox')">Try the Sandbox</button>
@@ -4373,9 +4394,9 @@
       </section>
 
       <div class="stats-bar fade-up">
-        <div class="stat"><span class="stat-num">47K+</span><span class="stat-label">Active Learners</span></div>
-        <div class="stat"><span class="stat-num">5</span><span class="stat-label">Skill Tiers</span></div>
-        <div class="stat"><span class="stat-num">120+</span><span class="stat-label">Guided Missions</span></div>
+        <div class="stat"><span class="stat-num">120+</span><span class="stat-label">Lessons</span></div>
+        <div class="stat"><span class="stat-num">13</span><span class="stat-label">Learning Paths</span></div>
+        <div class="stat"><span class="stat-num">Live</span><span class="stat-label">Personalized Feedback</span></div>
         <div class="stat"><span class="stat-num">94%</span><span class="stat-label">Report Better AI Results</span>
         </div>
       </div>
@@ -4396,8 +4417,7 @@
       <section class="section fade-up">
         <span class="section-eyebrow">Live Sandbox</span>
         <h2 class="section-title">See the difference<br>instantly.</h2>
-        <p class="section-sub">Compare a vague prompt to a precise one. Watch what happens when you give AI real
-          context.</p>
+        <p class="section-sub">Compare a vague prompt to a precise one. Watch what happens when you give AI real context.</p>
         <div class="sandbox">
           <div class="sandbox-header">
             <div class="sandbox-tabs">
@@ -4480,29 +4500,28 @@
       <!-- Curriculum -->
       <section class="section fade-up" style="padding-top:0">
         <span class="section-eyebrow">Curriculum</span>
-        <h2 class="section-title">Five levels.<br>One superpower.</h2>
-        <p class="section-sub">Progress from absolute beginner to certified prompt engineer through structured,
-          practical lessons.</p>
+        <h2 class="section-title">13 tracks.<br>One place to learn.</h2>
+        <p class="section-sub">Start with Core Skills to build a foundation, then pick any domain track that matches how you actually use AI.</p>
         <div class="tiers-grid">
           <div class="tier-card" onclick="showView('learn')"><span class="tier-num">01</span><span
-              class="tier-icon"></span><span class="tier-name">Foundations</span>
-            <div class="tier-desc">How AI models think and why word choice changes everything.</div>
+              class="tier-icon"></span><span class="tier-name">Core Skills</span>
+            <div class="tier-desc">Five tiers from the basics of how AI works up to advanced prompting patterns and graded challenges.</div>
           </div>
           <div class="tier-card" onclick="showView('learn')"><span class="tier-num">02</span><span
-              class="tier-icon"></span><span class="tier-name">Core Techniques</span>
-            <div class="tier-desc">Role-setting, context, format control, and tone direction.</div>
+              class="tier-icon"></span><span class="tier-name">Writing & Marketing</span>
+            <div class="tier-desc">Prompts for content, copy, emails, and brand voice.</div>
           </div>
           <div class="tier-card" onclick="showView('learn')"><span class="tier-num">03</span><span
-              class="tier-icon"></span><span class="tier-name">Advanced Patterns</span>
-            <div class="tier-desc">Chain-of-thought, few-shot examples, and iterative refinement.</div>
+              class="tier-icon"></span><span class="tier-name">Code & Data</span>
+            <div class="tier-desc">Using AI for code generation, debugging, data analysis, and technical documentation.</div>
           </div>
           <div class="tier-card" onclick="showView('learn')"><span class="tier-num">04</span><span
-              class="tier-icon"></span><span class="tier-name">Domain Tracks</span>
-            <div class="tier-desc">Specialized modules for code, writing, research, and images.</div>
+              class="tier-icon"></span><span class="tier-name">Research & Strategy</span>
+            <div class="tier-desc">Structured prompting for research, analysis, and decision-making.</div>
           </div>
           <div class="tier-card" onclick="showView('learn')"><span class="tier-num">05</span><span
-              class="tier-icon"></span><span class="tier-name">Master Challenges</span>
-            <div class="tier-desc">Real-world scenarios graded by an AI evaluator.</div>
+              class="tier-icon"></span><span class="tier-name">+ 9 More Tracks</span>
+            <div class="tier-desc">Productivity, communication, design, education, customer support, and more.</div>
           </div>
         </div>
       </section>
@@ -4510,44 +4529,38 @@
       <!-- Features -->
       <section class="section fade-up" style="padding-top:0">
         <span class="section-eyebrow">Features</span>
-        <h2 class="section-title">Built for doing,<br>not just reading.</h2>
-        <p class="section-sub">Every feature turns passive understanding into active skill.</p>
+        <h2 class="section-title">What's included.</h2>
+        <p class="section-sub">Every feature on the site is built around actually practicing, not just reading about it.</p>
         <div class="features-grid fade-up">
           <div class="feature-card">
             <div class="feature-icon"></div>
             <div class="feature-name">Live Sandbox</div>
-            <div class="feature-desc">Type a prompt and see AI output instantly. Get a real-time score and improvement
-              tips with every attempt.</div>
+            <div class="feature-desc">Write a prompt, see the AI response, and get a score with specific feedback on what to improve.</div>
           </div>
           <div class="feature-card">
             <div class="feature-icon"></div>
             <div class="feature-name">Prompt Dissector</div>
-            <div class="feature-desc">Paste any prompt and get it broken down into annotated components — role, context,
-              format, constraints — with a score.</div>
+            <div class="feature-desc">Paste any prompt and see exactly what's in it — the role, context, format, and constraints — labeled and explained.</div>
           </div>
           <div class="feature-card">
             <div class="feature-icon"></div>
             <div class="feature-name">Guided Missions</div>
-            <div class="feature-desc">Pass/fail challenges with clear goals. "Get the AI to write a cover letter in
-              under 50 words." Graded instantly.</div>
+            <div class="feature-desc">Specific challenges with a clear pass condition. Write the prompt, run it, and see if it meets the target.</div>
           </div>
           <div class="feature-card">
             <div class="feature-icon"></div>
             <div class="feature-name">Prompt Library</div>
-            <div class="feature-desc">A searchable, community-tested collection of high-performing prompts organized by
-              use case and domain.</div>
+            <div class="feature-desc">Browse prompts shared by other users, filtered by category. See what good looks like across different use cases.</div>
           </div>
           <div class="feature-card">
             <div class="feature-icon"></div>
             <div class="feature-name">AI Grader</div>
-            <div class="feature-desc">Submit your prompt and its response. An AI evaluator returns structured feedback
-              on clarity, precision, and output quality.</div>
+            <div class="feature-desc">Submit a prompt and its output. Claude reviews it and gives you a score with notes on clarity, precision, and quality.</div>
           </div>
           <div class="feature-card">
             <div class="feature-icon"></div>
             <div class="feature-name">Certification</div>
-            <div class="feature-desc">Earn your Certified Prompt Engineer badge upon completing all five tiers.
-              Shareable on LinkedIn and resumes.</div>
+            <div class="feature-desc">Complete all five tiers and earn a certificate. Download it or share it on LinkedIn.</div>
           </div>
         </div>
       </section>
@@ -4555,71 +4568,26 @@
       <!-- How it works -->
       <div class="section fade-up" style="padding-top:0">
         <span class="section-eyebrow">How It Works</span>
-        <h2 class="section-title" style="margin-bottom:40px">Three steps to<br>fluency.</h2>
+        <h2 class="section-title" style="margin-bottom:40px">How it works.</h2>
         <div class="steps-row fade-up">
           <div class="step">
             <div class="step-num">01</div>
             <div class="step-title">Learn the concept</div>
-            <div class="step-body">Each lesson introduces one technique with a clear explanation, real-world examples,
-              and a before/after comparison that shows the impact immediately.</div>
+            <div class="step-body">Each lesson covers one technique. You get an explanation, examples, and a quiz to make sure it sticks.</div>
           </div>
           <div class="step">
             <div class="step-num">02</div>
             <div class="step-title">Practice in the sandbox</div>
-            <div class="step-body">Apply what you learned in a live environment. Write prompts, see responses, get
-              scored, and iterate until you nail it.</div>
+            <div class="step-body">Take what you learned into the sandbox. Write prompts, see the AI's response, get a score, and adjust.</div>
           </div>
           <div class="step">
             <div class="step-num">03</div>
             <div class="step-title">Complete the mission</div>
-            <div class="step-body">Each tier ends with a real-world challenge. The AI Grader evaluates your submission
-              and you advance when you pass.</div>
+            <div class="step-body">Each tier ends with a graded challenge. Hit the target and move to the next level.</div>
           </div>
         </div>
       </div>
 
-      <!-- Testimonials -->
-      <section class="section fade-up" style="padding-top:40px">
-        <span class="section-eyebrow">From Learners</span>
-        <h2 class="section-title" style="margin-bottom:48px">What people<br>are saying.</h2>
-        <div class="testimonials-grid fade-up">
-          <div class="testi">
-            <div class="testi-quote">"I went from generic AI outputs to writing prompts that feel like they have a
-              co-author inside the model. The sandbox alone is worth it."</div>
-            <div class="testi-author">
-              <div class="testi-avatar">MR</div>
-              <div>
-                <div class="testi-name">Kaori Garcia
-
-                </div>
-                <div class="testi-role">Content Strategist</div>
-              </div>
-            </div>
-          </div>
-          <div class="testi">
-            <div class="testi-quote">"The Prompt Dissector changed how I think about instructions entirely. Now I apply
-              the same logic to writing documentation for my team."</div>
-            <div class="testi-author">
-              <div class="testi-avatar">JK</div>
-              <div>
-                <div class="testi-name">James Kim</div>
-                <div class="testi-role">Senior Engineer, Vercel</div>
-              </div>
-            </div>
-          </div>
-          <div class="testi">
-            <div class="testi-quote">"I finished the Advanced tier in a weekend. The missions felt genuinely hard, and
-              passing them felt genuinely rewarding. Rare for an online course."</div>
-            <div class="testi-author">
-              <div class="testi-avatar">SO</div>
-              <div>
-                <div class="testi-name">Sara Okonkwo</div>
-                <div class="testi-role">Product Manager</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <!-- Pricing -->
       <section class="section fade-up" style="padding-top:0" id="pricing">
@@ -4630,7 +4598,7 @@
           <div class="pricing-card">
             <div class="plan-name">Free</div>
             <div class="plan-price">$0</div>
-            <div class="plan-desc">Perfect for exploring the basics and getting your first wins with AI.</div>
+            <div class="plan-desc">Access the Core Skills track and try out the sandbox with 10 runs a month.</div>
             <div class="plan-divider"></div>
             <ul class="plan-features">
               <li>Foundations tier</li>
@@ -4642,8 +4610,8 @@
           <div class="pricing-card featured-plan">
             <div class="plan-badge">Most Popular</div>
             <div class="plan-name">Pro</div>
-            <div class="plan-price">$10 <span>/ mo</span></div>
-            <div class="plan-desc">For people serious about making AI work harder for them every day.</div>
+            <div class="plan-price">$20 <span>/ mo</span></div>
+            <div class="plan-desc">Unlock all 13 tracks, more sandbox runs, and AI grading on your submissions.</div>
             <div class="plan-divider"></div>
             <ul class="plan-features">
               <li>All five tiers unlocked</li>
@@ -4653,12 +4621,12 @@
               <li>AI Grader &amp; Dissector</li>
               <li>Domain Tracks</li>
               <li>Certification badge</li>
-            </ul><button class="btn-plan primary-plan">Start Pro Trial</button>
+            </ul><button class="btn-plan primary-plan" onclick="openProInquiry()">Get Pro</button>
           </div>
           <div class="pricing-card">
             <div class="plan-name">Team</div>
-            <div class="plan-price">$79 <span>/ mo</span></div>
-            <div class="plan-desc">Onboard your whole team and track collective progress across all tiers.</div>
+            <div class="plan-price">$110 <span>/ mo</span></div>
+            <div class="plan-desc">Get your team on PromptCraft with shared progress tracking and a managed prompt library.</div>
             <div class="plan-divider"></div>
             <ul class="plan-features">
               <li>Everything in Pro</li>
@@ -4666,15 +4634,15 @@
               <li>Team dashboard</li>
               <li>Custom prompt library</li>
               <li>Priority support</li>
-            </ul><button class="btn-plan" onclick="openStartTeamsFlow()">Start Teams →</button>
+            </ul><button class="btn-plan" onclick="openTeamsInquiry()">Contact Us →</button>
           </div>
         </div>
       </section>
 
       <div class="cta-banner fade-up">
-        <h2>Start speaking fluent AI today.</h2>
-        <p>No credit card required. Upgrade when you're ready.</p>
-        <button class="btn-accent" onclick="showView('learn')">Create Free Account →</button>
+        <h2>Start learning for free.</h2>
+        <p>No credit card required. The Core Skills track is fully free to access.</p>
+        <button class="btn-accent" onclick="showView('learn')">Start Learning →</button>
       </div>
 
       <footer>
@@ -4686,15 +4654,14 @@
           <div class="footer-col">
             <div class="footer-col-title">Product</div><a class="footer-link" onclick="showView('learn')">Lessons</a><a
               class="footer-link" onclick="showView('sandbox')">Sandbox</a><a class="footer-link"
-              onclick="showView('library')">Library</a><a class="footer-link">Certification</a>
+              onclick="showView('library')">Library</a>
           </div>
           <div class="footer-col">
-            <div class="footer-col-title">Company</div><a class="footer-link">About</a><a class="footer-link">Blog</a><a
-              class="footer-link">Careers</a><a class="footer-link">Contact</a>
+            <div class="footer-col-title">Company</div><a class="footer-link" onclick="showView('about')">About</a><a class="footer-link" onclick="showView('contact')">Contact</a>
           </div>
           <div class="footer-col">
-            <div class="footer-col-title">Legal</div><a class="footer-link">Privacy</a><a
-              class="footer-link">Terms</a><a class="footer-link">Cookies</a>
+            <div class="footer-col-title">Legal</div><a class="footer-link" onclick="showView('privacy')">Privacy</a><a
+              class="footer-link" onclick="showView('terms')">Terms</a>
           </div>
         </div>
       </footer>
@@ -4998,31 +4965,154 @@
         </div>
       </div>
     </div>
+    <!-- ══ ABOUT VIEW ══ -->
+    <div class="view" id="view-about">
+      <div class="contact-view" style="max-width:720px">
+        <h1>About PromptCraft</h1>
+        <p class="contact-sub">PromptCraft is an AI prompting school built to help anyone — from curious beginners to working professionals — learn how to communicate effectively with AI.</p>
+        <div class="contact-form-card" style="padding:36px;line-height:1.8;color:var(--text2);font-size:15px">
+          <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin:0 0 12px">What we do</h2>
+          <p style="margin:0 0 24px">We teach prompt engineering through structured lessons, hands-on sandbox practice, and AI-graded missions. Our curriculum is organized into 13 learning paths covering everything from core foundations to advanced domain-specific techniques in writing, code, research, marketing, and more.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin:0 0 12px">Why it matters</h2>
+          <p style="margin:0 0 24px">The difference between a mediocre AI interaction and a genuinely useful one comes down to how you ask. Prompt engineering is quickly becoming a foundational skill — not just for developers, but for anyone who uses AI tools in their work or daily life. PromptCraft makes that skill learnable, measurable, and fun.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin:0 0 12px">Built with Claude</h2>
+          <p style="margin:0 0 24px">PromptCraft is powered by Anthropic's Claude AI for all sandbox runs, grading, and feedback. Every score and suggestion you receive comes from a real AI evaluation of your prompt.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin:0 0 12px">Get in touch</h2>
+          <p style="margin:0">Questions, feedback, or partnership inquiries — reach us at <a href="mailto:promptcraftadmin@gmail.com" style="color:var(--accent-text);text-decoration:none">promptcraftadmin@gmail.com</a> or use the <a onclick="showView('contact')" style="color:var(--accent-text);text-decoration:none;cursor:pointer">contact form</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PRIVACY VIEW ══ -->
+    <div class="view" id="view-privacy">
+      <div class="contact-view" style="max-width:720px">
+        <h1>Privacy Policy</h1>
+        <p class="contact-sub">Last updated: April 2026</p>
+        <div class="contact-form-card" style="padding:36px;line-height:1.8;color:var(--text2);font-size:15px">
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">What we collect</h2>
+          <p style="margin:0 0 20px">When you create an account, we collect your name, email address, and a hashed (encrypted) password. If you sign in with Google or Microsoft, we receive your name and email from those providers — we never see your password. We also store your learning progress (XP, completed lessons, passed missions) so it persists across sessions.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">How we use it</h2>
+          <p style="margin:0 0 20px">Your data is used solely to operate PromptCraft — authenticating you, saving your progress, and providing AI sandbox functionality. We do not sell your data, share it with third parties for advertising, or use it for any purpose outside of delivering this service.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Sandbox prompts</h2>
+          <p style="margin:0 0 20px">Prompts you run in the sandbox are sent to Anthropic's Claude API to generate responses and scores. Please refer to <a href="https://www.anthropic.com/privacy" target="_blank" style="color:var(--accent-text);text-decoration:none">Anthropic's privacy policy</a> for how they handle API data.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Data storage</h2>
+          <p style="margin:0 0 20px">Your account data is stored in a secure PostgreSQL database hosted on Render. We use industry-standard encryption in transit (TLS) and at rest.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Cookies</h2>
+          <p style="margin:0 0 20px">We store a JWT authentication token in your browser's localStorage to keep you logged in. We do not use third-party tracking cookies or advertising cookies.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Your rights</h2>
+          <p style="margin:0 0 20px">You can delete your account at any time from Settings → Data. This permanently removes all your personal data from our systems. For any other privacy requests, contact us at <a href="mailto:promptcraftadmin@gmail.com" style="color:var(--accent-text);text-decoration:none">promptcraftadmin@gmail.com</a>.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Changes</h2>
+          <p style="margin:0">We may update this policy as the product evolves. Significant changes will be communicated via email or an in-app notice.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TERMS VIEW ══ -->
+    <div class="view" id="view-terms">
+      <div class="contact-view" style="max-width:720px">
+        <h1>Terms of Service</h1>
+        <p class="contact-sub">Last updated: April 2026</p>
+        <div class="contact-form-card" style="padding:36px;line-height:1.8;color:var(--text2);font-size:15px">
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Acceptance</h2>
+          <p style="margin:0 0 20px">By creating an account or using PromptCraft, you agree to these Terms of Service. If you do not agree, please do not use the service.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Use of the service</h2>
+          <p style="margin:0 0 20px">PromptCraft is provided for personal, educational use. You agree not to use the platform to generate harmful, illegal, abusive, or deceptive content. You are responsible for all activity that occurs under your account.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Accounts</h2>
+          <p style="margin:0 0 20px">You must provide accurate information when creating an account. You are responsible for maintaining the security of your password. Accounts are personal and may not be shared or transferred.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Free and Pro plans</h2>
+          <p style="margin:0 0 20px">The free plan provides access to core lessons and 10 sandbox runs per month. Pro plan access is granted manually at this time — submitting an inquiry does not guarantee immediate access. We reserve the right to change plan features and pricing with reasonable notice.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Community library</h2>
+          <p style="margin:0 0 20px">Prompts you publish to the community library become visible to all users. By publishing, you confirm the content is appropriate and does not violate any third-party rights. We reserve the right to remove any content that violates our content guidelines.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Intellectual property</h2>
+          <p style="margin:0 0 20px">All lessons, curriculum, UI, and branding are owned by PromptCraft. You retain ownership of prompts you create. You may not reproduce or redistribute our lesson content without permission.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Disclaimer</h2>
+          <p style="margin:0 0 20px">PromptCraft is provided "as is" without warranties of any kind. We are not liable for any damages arising from use of the service, including AI-generated content from the sandbox.</p>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin:0 0 10px">Contact</h2>
+          <p style="margin:0">For questions about these terms, contact us at <a href="mailto:promptcraftadmin@gmail.com" style="color:var(--accent-text);text-decoration:none">promptcraftadmin@gmail.com</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pro Inquiry Modal -->
+    <div class="auth-overlay" id="proInquiryModal">
+      <div class="inquiry-modal">
+        <button class="settings-close" onclick="document.getElementById('proInquiryModal').classList.remove('open')" style="float:right;margin:-8px -8px 0 0">✕</button>
+        <div id="proInquiryContent">
+          <div class="inquiry-title">Upgrade to Pro</div>
+          <div class="inquiry-sub">We're currently finalizing our payment system. Fill out this form and we'll get back to you shortly — or reach us directly at <a href="mailto:promptcraftadmin@gmail.com">promptcraftadmin@gmail.com</a>.</div>
+          <div class="inquiry-field"><label>Name</label><input type="text" id="proInqName" placeholder="Your name"></div>
+          <div class="inquiry-field"><label>Email</label><input type="email" id="proInqEmail" placeholder="you@example.com"></div>
+          <div class="auth-error" id="proInqError"></div>
+          <button class="btn-auth" onclick="submitProInquiry()">Send Request</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Teams Inquiry Modal -->
+    <div class="auth-overlay" id="teamsInquiryModal">
+      <div class="inquiry-modal">
+        <button class="settings-close" onclick="document.getElementById('teamsInquiryModal').classList.remove('open')" style="float:right;margin:-8px -8px 0 0">✕</button>
+        <div id="teamsInquiryContent">
+          <div class="inquiry-title">Get PromptCraft for Teams</div>
+          <div class="inquiry-sub">We're currently finalizing team billing. Fill out this form and we'll be in touch with pricing and setup details — or contact us at <a href="mailto:promptcraftadmin@gmail.com">promptcraftadmin@gmail.com</a>.</div>
+          <div class="inquiry-field"><label>Business Name</label><input type="text" id="teamsInqBiz" placeholder="Your company or organization"></div>
+          <div class="inquiry-field"><label>Contact Email</label><input type="email" id="teamsInqEmail" placeholder="you@company.com"></div>
+          <div class="inquiry-field"><label>Number of Accounts</label><input type="text" id="teamsInqNum" placeholder="e.g. 10, 25, 50+"></div>
+          <div class="auth-error" id="teamsInqError"></div>
+          <button class="btn-auth" onclick="submitTeamsInquiry()">Send Request</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CONTACT VIEW ══ -->
+    <div class="view" id="view-contact">
+      <div class="contact-view">
+        <h1>Get in Touch</h1>
+        <p class="contact-sub">Have a question, feedback, or just want to say hello? We'd love to hear from you.</p>
+        <div class="contact-form-card">
+          <div id="contactFormContent">
+            <div class="inquiry-field"><label>Name</label><input type="text" id="contactName" placeholder="Your name"></div>
+            <div class="inquiry-field"><label>Email</label><input type="email" id="contactEmail" placeholder="you@example.com"></div>
+            <div class="inquiry-field"><label>Message</label><textarea id="contactMessage" placeholder="What's on your mind?"></textarea></div>
+            <div class="auth-error" id="contactError" style="margin-bottom:8px"></div>
+            <button class="btn-auth" onclick="submitContactForm()">Send Message</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ ADMIN VIEW ══ -->
     <div class="view" id="view-admin">
       <div class="admin-view">
         <div class="admin-header">
           <h1>Admin Panel</h1>
-          <p>Manage all user accounts and plan levels.</p>
+          <p>Manage all user accounts and incoming inquiries.</p>
         </div>
-        <div class="admin-stats" id="adminStats"></div>
-        <input class="admin-search" id="adminSearch" type="text" placeholder="Search by name or email…" oninput="filterAdminUsers()" />
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Plan</th>
-                <th>Runs</th>
-                <th>XP</th>
-                <th>Lessons</th>
-                <th>Last Visit</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="adminUsersBody"></tbody>
-          </table>
+        <div style="display:flex;gap:8px;margin-bottom:24px">
+          <button class="auth-tab active" id="adminTabUsers" onclick="switchAdminTab('users')">Users</button>
+          <button class="auth-tab" id="adminTabContacts" onclick="switchAdminTab('contacts')">Inquiries <span id="adminContactBadge" style="display:none;background:var(--accent);color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:4px"></span></button>
+        </div>
+
+        <!-- Users tab -->
+        <div id="adminPanelUsers">
+          <div class="admin-stats" id="adminStats"></div>
+          <input class="admin-search" id="adminSearch" type="text" placeholder="Search by name or email…" oninput="filterAdminUsers()" />
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>User</th><th>Email</th><th>Plan</th><th>Runs</th><th>XP</th><th>Lessons</th><th>Last Visit</th><th>Actions</th></tr></thead>
+              <tbody id="adminUsersBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Contacts tab -->
+        <div id="adminPanelContacts" style="display:none">
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Type</th><th>Name / Business</th><th>Email</th><th>Details</th><th>Message</th><th>Date</th><th></th></tr></thead>
+              <tbody id="adminContactsBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -5030,7 +5120,7 @@
   </div><!-- /page -->
   <script>
     // ── State ──────────────────────────────────────────────
-    const state = JSON.parse(localStorage.getItem('pc_state') || '{"xp":0,"streak":1,"completedLessons":[],"passedMissions":[],"sbRuns":0,"lastVisit":"","currentCategory":"core"}');
+    const state = JSON.parse(localStorage.getItem('pc_state') || '{"xp":0,"streak":0,"completedLessons":[],"passedMissions":[],"sbRuns":0,"lastVisit":"","currentCategory":"core"}');
     if (!state.currentCategory) state.currentCategory = 'core';
     function save() { localStorage.setItem('pc_state', JSON.stringify(state)) }
     let currentLesson = null;
@@ -6464,7 +6554,7 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
       }
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.getElementById('view-' + name).classList.add('active');
-      const navNames = ['home', 'learn', 'sandbox', 'library', 'leaderboard', 'teams', 'admin'];
+      const navNames = ['home', 'learn', 'sandbox', 'library', 'leaderboard', 'teams', 'admin', 'contact', 'about', 'privacy', 'terms'];
       document.querySelectorAll('.nav-link').forEach(l => {
         l.classList.remove('active');
         if (l.getAttribute('onclick') && l.getAttribute('onclick').includes("'" + name + "'")) l.classList.add('active');
@@ -6477,7 +6567,7 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
       if (name === 'leaderboard') renderLeaderboard('weekly');
       if (name === 'sandbox') renderSandboxTemplates();
       if (name === 'teams') renderTeamDashboard();
-      if (name === 'admin') loadAdminUsers();
+      if (name === 'admin') { loadAdminUsers(); loadAdminContacts(); }
     }
 
     // ── Scroll animations ────────────────────────────────────
@@ -6726,6 +6816,15 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
     function finishLesson() {
       if (!currentLesson || state.completedLessons.includes(currentLesson.id)) return;
       state.completedLessons.push(currentLesson.id);
+      // ── Streak logic ──────────────────────────────────────
+      const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+      const last = state.lastVisit;
+      if (last !== today) {
+        const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+        state.streak = (last === yesterday) ? state.streak + 1 : 1;
+        state.lastVisit = today;
+      }
+      // ─────────────────────────────────────────────────────
       addXP(currentLesson.xp, 'Lesson Complete!');
       save(); closeModal(); renderLearn();
       syncProgress();
@@ -7935,8 +8034,112 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
     updateNav();
     renderPOTD();
     populateNavDropdown();
+    // ── Inquiry & Contact Forms ──────────────────────────────
+    function openProInquiry() {
+      document.getElementById('proInquiryContent').innerHTML = `
+        <div class="inquiry-title">Upgrade to Pro</div>
+        <div class="inquiry-sub">We're currently finalizing our payment system. Fill out this form and we'll get back to you shortly — or reach us directly at <a href="mailto:promptcraftadmin@gmail.com">promptcraftadmin@gmail.com</a>.</div>
+        <div class="inquiry-field"><label>Name</label><input type="text" id="proInqName" placeholder="Your name" value="${authUser?.name || ''}"></div>
+        <div class="inquiry-field"><label>Email</label><input type="email" id="proInqEmail" placeholder="you@example.com" value="${authUser?.email || ''}"></div>
+        <div class="auth-error" id="proInqError"></div>
+        <button class="btn-auth" onclick="submitProInquiry()">Send Request</button>`;
+      document.getElementById('proInquiryModal').classList.add('open');
+    }
+
+    async function submitProInquiry() {
+      const name = document.getElementById('proInqName').value.trim();
+      const email = document.getElementById('proInqEmail').value.trim();
+      const err = document.getElementById('proInqError');
+      if (!name || !email) { err.textContent = 'Name and email are required.'; return; }
+      const btn = event.target; btn.disabled = true; btn.textContent = 'Sending…';
+      err.textContent = '';
+      try {
+        await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'pro', name, email }) });
+        document.getElementById('proInquiryContent').innerHTML = `<div class="inquiry-success"></div><h3>Request Received!</h3><p>We'll be in touch at ${email} as soon as payment is available.</p></div>`;
+        setTimeout(() => document.getElementById('proInquiryModal').classList.remove('open'), 3000);
+      } catch { err.textContent = 'Something went wrong. Please try again.'; btn.disabled = false; btn.textContent = 'Send Request'; }
+    }
+
+    function openTeamsInquiry() {
+      document.getElementById('teamsInquiryContent').innerHTML = `
+        <div class="inquiry-title">Get PromptCraft for Teams</div>
+        <div class="inquiry-sub">We're currently finalizing team billing. Fill out this form and we'll be in touch with pricing and setup details — or contact us at <a href="mailto:promptcraftadmin@gmail.com">promptcraftadmin@gmail.com</a>.</div>
+        <div class="inquiry-field"><label>Business Name</label><input type="text" id="teamsInqBiz" placeholder="Your company or organization"></div>
+        <div class="inquiry-field"><label>Contact Email</label><input type="email" id="teamsInqEmail" placeholder="you@company.com" value="${authUser?.email || ''}"></div>
+        <div class="inquiry-field"><label>Number of Accounts</label><input type="text" id="teamsInqNum" placeholder="e.g. 10, 25, 50+"></div>
+        <div class="auth-error" id="teamsInqError"></div>
+        <button class="btn-auth" onclick="submitTeamsInquiry()">Send Request</button>`;
+      document.getElementById('teamsInquiryModal').classList.add('open');
+    }
+
+    async function submitTeamsInquiry() {
+      const biz = document.getElementById('teamsInqBiz').value.trim();
+      const email = document.getElementById('teamsInqEmail').value.trim();
+      const num = document.getElementById('teamsInqNum').value.trim();
+      const err = document.getElementById('teamsInqError');
+      if (!biz || !email) { err.textContent = 'Business name and email are required.'; return; }
+      const btn = event.target; btn.disabled = true; btn.textContent = 'Sending…';
+      err.textContent = '';
+      try {
+        await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'teams', name: biz, email, businessName: biz, numAccounts: num }) });
+        document.getElementById('teamsInquiryContent').innerHTML = `<div class="inquiry-success"><h3>Request Received!</h3><p>We'll reach out to ${email} with everything you need to get your team started.</p></div>`;
+        setTimeout(() => document.getElementById('teamsInquiryModal').classList.remove('open'), 3000);
+      } catch { err.textContent = 'Something went wrong. Please try again.'; btn.disabled = false; btn.textContent = 'Send Request'; }
+    }
+
+    async function submitContactForm() {
+      const name = document.getElementById('contactName').value.trim();
+      const email = document.getElementById('contactEmail').value.trim();
+      const message = document.getElementById('contactMessage').value.trim();
+      const err = document.getElementById('contactError');
+      if (!name || !email || !message) { err.textContent = 'All fields are required.'; return; }
+      const btn = event.target; btn.disabled = true; btn.textContent = 'Sending…';
+      err.textContent = '';
+      try {
+        await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'general', name, email, message }) });
+        document.getElementById('contactFormContent').innerHTML = `<div class="inquiry-success"><h3>Message Sent!</h3><p>Thanks ${name}, we'll get back to you at ${email} soon.</p></div>`;
+      } catch { err.textContent = 'Something went wrong. Please try again.'; btn.disabled = false; btn.textContent = 'Send Message'; }
+    }
+
     // ── Admin Panel ──────────────────────────────────────────
     let _adminUsers = [];
+
+    function switchAdminTab(tab) {
+      document.getElementById('adminPanelUsers').style.display = tab === 'users' ? '' : 'none';
+      document.getElementById('adminPanelContacts').style.display = tab === 'contacts' ? '' : 'none';
+      document.getElementById('adminTabUsers').classList.toggle('active', tab === 'users');
+      document.getElementById('adminTabContacts').classList.toggle('active', tab === 'contacts');
+      if (tab === 'contacts') loadAdminContacts();
+    }
+
+    async function loadAdminContacts() {
+      const token = getToken();
+      try {
+        const res = await fetch('/api/admin/contacts', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) return;
+        const contacts = await res.json();
+        const badge = document.getElementById('adminContactBadge');
+        if (contacts.length) { badge.style.display = ''; badge.textContent = contacts.length; }
+        const tbody = document.getElementById('adminContactsBody');
+        if (!contacts.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">No inquiries yet.</td></tr>'; return; }
+        const typeLabel = { pro: 'Pro', teams: 'Teams', general: 'General' };
+        tbody.innerHTML = contacts.map(c => `<tr>
+          <td><span style="font-size:12px;font-weight:700">${typeLabel[c.type] || c.type}</span></td>
+          <td>${c.name}</td>
+          <td style="color:var(--muted)">${c.email}</td>
+          <td style="color:var(--muted);font-size:12px">${c.numAccounts ? `${c.numAccounts} accounts` : '—'}</td>
+          <td style="max-width:220px;font-size:12px;color:var(--muted)">${c.message || '—'}</td>
+          <td style="color:var(--muted);font-size:12px">${new Date(c.createdAt).toLocaleDateString()}</td>
+          <td><button class="admin-btn-delete" onclick="adminDeleteContact('${c.id}')">Delete</button></td>
+        </tr>`).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    async function adminDeleteContact(id) {
+      const token = getToken();
+      await fetch(`/api/admin/contacts/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+      loadAdminContacts();
+    }
 
     async function loadAdminUsers() {
       const token = getToken();
