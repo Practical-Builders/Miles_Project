@@ -4139,9 +4139,10 @@
       border-radius: 18px;
       padding: 24px 24px 20px;
       width: 340px;
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
       box-shadow: 0 8px 40px rgba(0,0,0,.22);
-      transition: top .38s cubic-bezier(.4,0,.2,1), left .38s cubic-bezier(.4,0,.2,1),
-                  bottom .38s cubic-bezier(.4,0,.2,1)
+      transition: top .38s cubic-bezier(.4,0,.2,1), left .38s cubic-bezier(.4,0,.2,1)
     }
     .tour-step-label {
       font-size: 10px;
@@ -8832,7 +8833,7 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
         desc: 'Every day a new expert-crafted prompt appears here. Study the structure, then hit "Try in Sandbox" to experiment with it live and understand why it works.'
       },
       {
-        selector: 'button.nav-link[onclick*="\'learn\'"]',
+        selector: '.nav-center button[onclick*="\'learn\'"]',
         radius: '10px',
         placement: 'bottom',
         label: 'Learn',
@@ -8840,7 +8841,7 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
         desc: 'Lessons are organized by skill tier — from writing your first prompt all the way to advanced chain-of-thought techniques. Each lesson earns XP and ends with a short quiz.'
       },
       {
-        selector: 'button.nav-link[onclick*="\'sandbox\'"]',
+        selector: '.nav-center button[onclick*="\'sandbox\'"]',
         radius: '10px',
         placement: 'bottom',
         label: 'Sandbox',
@@ -8848,7 +8849,7 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
         desc: 'The Sandbox connects to real AI. Type a prompt, adjust the system instructions, and see exactly how your wording changes the output. It\'s the fastest way to build real intuition.'
       },
       {
-        selector: 'button.nav-link[onclick*="\'library\'"]',
+        selector: '.nav-center button[onclick*="\'library\'"]',
         radius: '10px',
         placement: 'bottom',
         label: 'Library',
@@ -8856,7 +8857,7 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
         desc: 'A curated collection of top-rated prompts from the PromptCraft community, organized by category. Copy any prompt directly into the Sandbox to remix and learn from it.'
       },
       {
-        selector: 'button.nav-link[onclick*="\'leaderboard\'"]',
+        selector: '.nav-center button[onclick*="\'leaderboard\'"]',
         radius: '10px',
         placement: 'bottom',
         label: 'Leaderboard',
@@ -8886,21 +8887,45 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
 
     function positionTooltip(rect, pad, placement) {
       const tooltip = document.getElementById('tourTooltip');
-      const W = 340;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
       const margin = 14;
+      const W = Math.min(340, vw - 24);
+
+      // Set width and push off-screen so we can measure actual rendered height
       tooltip.style.width = W + 'px';
       tooltip.style.transform = 'none';
+      tooltip.style.bottom = 'auto';
+      tooltip.style.left = '0px';
+      tooltip.style.top = '-9999px';
+
+      // Force reflow → real height
+      const th = tooltip.getBoundingClientRect().height || 240;
+
       const spBottom = rect.bottom + pad;
       const spTop = rect.top - pad;
-      const left = Math.max(12, Math.min(window.innerWidth - W - 12, rect.left - pad));
-      tooltip.style.left = left + 'px';
-      if (placement === 'bottom' && spBottom + margin + 180 < window.innerHeight) {
-        tooltip.style.top = (spBottom + margin) + 'px';
-        tooltip.style.bottom = 'auto';
+      const left = Math.max(12, Math.min(vw - W - 12, rect.left - pad));
+
+      const fitsBelow = spBottom + margin + th <= vh - 8;
+      const fitsAbove = spTop - margin - th >= 8;
+
+      let top;
+      if (placement === 'bottom' && fitsBelow) {
+        top = spBottom + margin;
+      } else if (fitsAbove) {
+        top = spTop - margin - th;
+      } else if (fitsBelow) {
+        top = spBottom + margin;
       } else {
-        tooltip.style.bottom = (window.innerHeight - spTop + margin) + 'px';
-        tooltip.style.top = 'auto';
+        // Neither fits cleanly — anchor to bottom of viewport
+        top = vh - th - 12;
       }
+
+      // Hard clamp so tooltip never exits the screen
+      top = Math.max(8, Math.min(vh - th - 8, top));
+
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
     }
 
     function renderTourStep() {
@@ -8922,7 +8947,7 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
       const spotlight = document.getElementById('tourSpotlight');
       const el = step.selector ? document.querySelector(step.selector) : null;
       if (!el) { spotlight.style.display = 'none'; return; }
-      const inNav = el.closest('nav') !== null;
+      const inNav = el.closest('.nav-center') !== null;
       const rect0 = el.getBoundingClientRect();
       const alreadyVisible = rect0.top >= 0 && rect0.bottom <= window.innerHeight;
       const scrollDelay = (!inNav && !alreadyVisible) ? 220 : 0;
