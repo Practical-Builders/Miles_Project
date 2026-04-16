@@ -24,7 +24,7 @@ function loadEnv() {
 }
 loadEnv();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'promptcraft-secret-change-me';
+const JWT_SECRET = process.env.JWT_SECRET || 'promptlyperfect-secret-change-me';
 const BASE_URL = process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const FREE_RUN_LIMIT = 10;
@@ -37,7 +37,7 @@ try {
   if (process.env.RESEND_API_KEY) resendClient = new Resend(process.env.RESEND_API_KEY);
 } catch {}
 
-const RESEND_FROM = process.env.RESEND_FROM || 'PromptCraft <onboarding@resend.dev>';
+const RESEND_FROM = process.env.RESEND_FROM || 'PromptlyPerfect <onboarding@resend.dev>';
 // onboarding@resend.dev can only deliver to the Resend account owner's address until a domain is verified.
 // Set RESEND_OVERRIDE_TO to your Resend account email to receive all emails during testing.
 const RESEND_OVERRIDE_TO = process.env.RESEND_OVERRIDE_TO || null;
@@ -332,8 +332,8 @@ app.post('/api/signup', async (req, res) => {
   );
   const user = await getUser(id);
   const verifyUrl = `${BASE_URL}/api/verify-email?token=${verificationToken}`;
-  await sendEmail(email.toLowerCase(), 'Verify your PromptCraft email',
-    `<p>Hi ${name},</p><p>Thanks for signing up for PromptCraft! Click below to verify your email address.</p><p><a href="${verifyUrl}" style="background:#6C63FF;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Verify Email</a></p><p>Or copy this link: ${verifyUrl}</p>`);
+  await sendEmail(email.toLowerCase(), 'Verify your PromptlyPerfect email',
+    `<p>Hi ${name},</p><p>Thanks for signing up for PromptlyPerfect! Click below to verify your email address.</p><p><a href="${verifyUrl}" style="background:#6C63FF;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Verify Email</a></p><p>Or copy this link: ${verifyUrl}</p>`);
   const token = jwt.sign({ id, email: user.email, name }, JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, user: publicUser(user) });
 });
@@ -1079,8 +1079,8 @@ app.post('/api/forgot-password', async (req, res) => {
     const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
     await query('UPDATE users SET password_reset_token = $1, password_reset_expires = $2 WHERE id = $3', [token, expires, user.id]);
     const resetUrl = `${BASE_URL}/?reset_token=${token}`;
-    await sendEmail(email.toLowerCase(), 'Reset your PromptCraft password',
-      `<p>Hi ${user.name},</p><p>Click below to reset your PromptCraft password. This link expires in 1 hour.</p><p><a href="${resetUrl}" style="background:#6C63FF;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Reset Password</a></p><p>Or copy this link: ${resetUrl}</p><p>If you didn't request this, you can safely ignore this email.</p>`);
+    await sendEmail(email.toLowerCase(), 'Reset your PromptlyPerfect password',
+      `<p>Hi ${user.name},</p><p>Click below to reset your PromptlyPerfect password. This link expires in 1 hour.</p><p><a href="${resetUrl}" style="background:#6C63FF;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Reset Password</a></p><p>Or copy this link: ${resetUrl}</p><p>If you didn't request this, you can safely ignore this email.</p>`);
   }
   res.json({ success: true });
 });
@@ -1117,7 +1117,7 @@ app.post('/api/resend-verification', requireAuth, async (req, res) => {
   const verificationToken = randomBytes(32).toString('hex');
   await query('UPDATE users SET verification_token = $1 WHERE id = $2', [verificationToken, user.id]);
   const verifyUrl = `${BASE_URL}/api/verify-email?token=${verificationToken}`;
-  await sendEmail(user.email, 'Verify your PromptCraft email',
+  await sendEmail(user.email, 'Verify your PromptlyPerfect email',
     `<p>Hi ${user.name},</p><p>Click below to verify your email address.</p><p><a href="${verifyUrl}" style="background:#6C63FF;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Verify Email</a></p><p>Or copy this link: ${verifyUrl}</p>`);
   res.json({ success: true });
 });
@@ -1127,7 +1127,7 @@ app.get('/cert/:id', async (req, res) => {
   const row = await queryOne('SELECT c.*, u.name AS user_name FROM certificates c JOIN users u ON u.id = c.user_id WHERE c.id = $1', [req.params.id]);
   if (!row) return res.status(404).send('<h1>Certificate not found</h1>');
   const earnedDate = new Date(row.earned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PromptCraft Certificate — ${row.user_name}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f13;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}.frame{background:#1a1a24;border:2px solid #6C63FF;border-radius:16px;padding:56px 48px;max-width:540px;width:100%;text-align:center;position:relative}.label{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:#888;margin-bottom:28px}.name{font-size:36px;font-weight:800;color:#fff;margin-bottom:10px}.sub{font-size:13px;color:#888;margin-bottom:10px}.track{font-size:22px;font-weight:700;color:#6C63FF;margin-bottom:24px}.divider{width:60px;height:2px;background:#6C63FF;margin:0 auto 20px}.date{font-size:13px;color:#888;margin-bottom:8px}.certid{font-size:10px;color:#555;margin-bottom:28px}.brand{font-size:13px;font-weight:700;color:#6C63FF;margin-top:8px}@media print{body{background:#fff}.frame{border-color:#6C63FF;background:#fff}.name,.brand{color:#6C63FF}.sub,.date,.certid{color:#666}.label{color:#999}}</style></head><body><div class="frame"><div class="label">Certificate of Completion</div><div class="name">${row.user_name}</div><div class="sub">has successfully completed</div><div class="track">${row.category_name || row.category_id || 'Prompt Engineering'}</div><div class="divider"></div><div class="date">Completed on ${earnedDate}</div><div class="certid">Certificate ID: ${row.id}</div><div class="brand">PromptCraft</div></div></body></html>`);
+  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PromptlyPerfect Certificate — ${row.user_name}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f13;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}.frame{background:#1a1a24;border:2px solid #6C63FF;border-radius:16px;padding:56px 48px;max-width:540px;width:100%;text-align:center;position:relative}.label{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:#888;margin-bottom:28px}.name{font-size:36px;font-weight:800;color:#fff;margin-bottom:10px}.sub{font-size:13px;color:#888;margin-bottom:10px}.track{font-size:22px;font-weight:700;color:#6C63FF;margin-bottom:24px}.divider{width:60px;height:2px;background:#6C63FF;margin:0 auto 20px}.date{font-size:13px;color:#888;margin-bottom:8px}.certid{font-size:10px;color:#555;margin-bottom:28px}.brand{font-size:13px;font-weight:700;color:#6C63FF;margin-top:8px}@media print{body{background:#fff}.frame{border-color:#6C63FF;background:#fff}.name,.brand{color:#6C63FF}.sub,.date,.certid{color:#666}.label{color:#999}}</style></head><body><div class="frame"><div class="label">Certificate of Completion</div><div class="name">${row.user_name}</div><div class="sub">has successfully completed</div><div class="track">${row.category_name || row.category_id || 'Prompt Engineering'}</div><div class="divider"></div><div class="date">Completed on ${earnedDate}</div><div class="certid">Certificate ID: ${row.id}</div><div class="brand">PromptlyPerfect</div></div></body></html>`);
 });
 
 // ── OAuth ─────────────────────────────────────────────────────────────────
@@ -1228,4 +1228,4 @@ app.get('/auth/microsoft/callback', async (req, res) => {
 
 // ── Start ─────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`PromptCraft server running at http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`PromptlyPerfect server running at http://localhost:${PORT}`));
