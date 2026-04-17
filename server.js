@@ -657,6 +657,53 @@ app.post('/api/teams/:teamId/invites/bulk', requireAuth, (req, res, next) => req
   res.json({ invites: invites.map(inv => ({ ...inv, link: `/?invite=${inv.token}` })) });
 });
 
+// POST /api/teams/:teamId/invites/send-email
+app.post('/api/teams/:teamId/invites/send-email', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
+  const { emails } = req.body;
+  if (!Array.isArray(emails) || emails.length === 0) return res.status(400).json({ error: 'emails array required' });
+  if (emails.length > 20) return res.status(400).json({ error: 'Maximum 20 invites at once' });
+
+  // Get team name for the email
+  const teamRow = await queryOne('SELECT name FROM teams WHERE id = $1', [req.params.teamId]);
+  const teamName = teamRow ? teamRow.name : 'a team';
+  const inviterName = req.user.name || req.user.email;
+
+  const results = [];
+  for (const rawEmail of emails) {
+    const email = rawEmail.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      results.push({ email, success: false, error: 'Invalid email address' });
+      continue;
+    }
+    try {
+      const token = randomBytes(32).toString('hex');
+      const id = 'inv_' + randomUUID();
+      const createdAt = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+      await query(
+        'INSERT INTO team_invites (id, team_id, token, created_by, label, created_at, expires_at, used_by, used_at) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL)',
+        [id, req.params.teamId, token, req.user.id, email, createdAt, expiresAt]
+      );
+      const inviteLink = `${BASE_URL}/?invite=${token}`;
+      await sendEmail(email, `You've been invited to join ${teamName} on PromptlyPerfect`,
+        `<div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+          <h2 style="color:#111">You're invited!</h2>
+          <p>${inviterName} has invited you to join <strong>${teamName}</strong> on PromptlyPerfect.</p>
+          <p>PromptlyPerfect is an AI-powered platform for learning how to write better prompts and work more effectively with AI tools.</p>
+          <div style="text-align:center;margin:32px 0">
+            <a href="${inviteLink}" style="background:#6366f1;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;font-size:15px">Accept Invitation →</a>
+          </div>
+          <p style="color:#888;font-size:12px">This invite link expires in 30 days. If you didn't expect this email, you can safely ignore it.</p>
+        </div>`
+      );
+      results.push({ email, success: true });
+    } catch (e) {
+      results.push({ email, success: false, error: 'Failed to send' });
+    }
+  }
+  res.json({ results });
+});
+
 // GET /api/teams/:teamId/invites
 app.get('/api/teams/:teamId/invites', requireAuth, (req, res, next) => requireTeamRole('owner','admin')(req, res, next), async (req, res) => {
   const now = new Date().toISOString();

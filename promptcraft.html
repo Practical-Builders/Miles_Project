@@ -5010,13 +5010,11 @@
         <button class="settings-close"
           onclick="document.getElementById('inviteModal').classList.remove('open')">✕</button>
         <h3 style="font-size:20px;margin-bottom:8px">Invite Members</h3>
-        <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Share this link with anyone you want to join your team.</p>
-        <div id="invLinkBox" style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;min-height:44px">
-          <span id="invLinkText" style="flex:1;font-size:13px;color:var(--muted);word-break:break-all">Generating…</span>
-          <button class="btn-ghost" id="invCopyBtn" style="font-size:12px;padding:5px 12px;flex-shrink:0" onclick="copyCurrentInviteLink(this)">Copy</button>
-        </div>
-        <button class="btn-ghost" style="margin-top:12px;font-size:12px;width:100%" onclick="createInviteClick()">Generate New Link</button>
-        <div class="pub-error" id="inviteError" style="margin-top:10px"></div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Enter email addresses below (one per line or comma-separated) and we'll send each person a personal invite link.</p>
+        <textarea id="inviteEmailInput" placeholder="alice@example.com&#10;bob@example.com" style="width:100%;box-sizing:border-box;height:110px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text);resize:vertical;font-family:inherit"></textarea>
+        <button class="btn-primary" style="width:100%;margin-top:12px" onclick="sendInviteEmails(this)">Send Invites</button>
+        <div id="inviteError" style="margin-top:10px;font-size:13px"></div>
+        <div id="inviteResults" style="margin-top:10px"></div>
       </div>
     </div>
 
@@ -8396,35 +8394,44 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
     }
 
     // ── Invite flow ────────────────────────────────────────────
-    let _currentInviteLink = '';
 
-    async function openInviteModal() {
+    function openInviteModal() {
       document.getElementById('inviteError').textContent = '';
-      document.getElementById('invLinkText').textContent = 'Generating…';
-      _currentInviteLink = '';
+      document.getElementById('inviteResults').innerHTML = '';
+      document.getElementById('inviteEmailInput').value = '';
       document.getElementById('inviteModal').classList.add('open');
-      await createInviteClick();
     }
 
-    async function createInviteClick() {
+    async function sendInviteEmails(btn) {
       const errEl = document.getElementById('inviteError');
+      const resultsEl = document.getElementById('inviteResults');
       errEl.textContent = '';
-      document.getElementById('invLinkText').textContent = 'Generating…';
+      resultsEl.innerHTML = '';
+      const raw = document.getElementById('inviteEmailInput').value;
+      const emails = raw.split(/[\n,]+/).map(e => e.trim()).filter(Boolean);
+      if (!emails.length) { errEl.textContent = 'Please enter at least one email address.'; return; }
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
       try {
-        const res = await fetch('/api/teams/' + authUser.teamId + '/invites', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, body: JSON.stringify({ label: '' }) });
+        const res = await fetch('/api/teams/' + authUser.teamId + '/invites/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+          body: JSON.stringify({ emails })
+        });
         const data = await res.json();
-        if (!res.ok) { errEl.textContent = data.error || 'Could not create invite.'; document.getElementById('invLinkText').textContent = '—'; return; }
-        _currentInviteLink = window.location.origin + data.link;
-        document.getElementById('invLinkText').textContent = _currentInviteLink;
-      } catch (e) { errEl.textContent = 'Could not connect to server.'; document.getElementById('invLinkText').textContent = '—'; }
-    }
-
-    function copyCurrentInviteLink(btn) {
-      if (!_currentInviteLink) return;
-      navigator.clipboard.writeText(_currentInviteLink).then(() => {
-        btn.textContent = 'Copied!';
-        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
-      });
+        if (!res.ok) { errEl.textContent = data.error || 'Could not send invites.'; return; }
+        const results = data.results || [];
+        const sent = results.filter(r => r.success).length;
+        const failed = results.filter(r => !r.success);
+        resultsEl.innerHTML = `<div style="font-size:13px;color:var(--accent-text);font-weight:600;margin-bottom:8px">${sent} invite${sent !== 1 ? 's' : ''} sent!</div>` +
+          (failed.length ? failed.map(r => `<div style="font-size:12px;color:var(--red,#ef4444)">✕ ${r.email} — ${r.error || 'Failed'}</div>`).join('') : '');
+        if (!failed.length) document.getElementById('inviteEmailInput').value = '';
+      } catch (e) {
+        errEl.textContent = 'Could not connect to server.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Invites';
+      }
     }
 
     function copyInviteLink(link, btn) {
