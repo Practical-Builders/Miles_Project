@@ -7962,7 +7962,8 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
       fetch('/api/invites/' + token).then(r => r.json()).then(data => {
         if (!data.valid) { alert('This invite link is invalid: ' + (data.reason || 'Unknown error')); return; }
         if (!authUser) {
-          // show auth first, then accept after login
+          // Save token to localStorage so it survives an OAuth redirect
+          localStorage.setItem('pc_pending_invite', token);
           openAuth('signup');
           return;
         }
@@ -9357,6 +9358,17 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
       else if (_path === '/terms') { window.history.replaceState({}, '', '/terms'); showView('terms'); }
 
       if (!authUser) checkInviteParam();
+      // Pick up invite token saved before an OAuth redirect
+      if (authUser) {
+        const pendingInvite = localStorage.getItem('pc_pending_invite');
+        if (pendingInvite) {
+          localStorage.removeItem('pc_pending_invite');
+          _pendingInviteToken = pendingInvite;
+          fetch('/api/invites/' + pendingInvite).then(r => r.json()).then(d => {
+            if (d.valid) showAcceptInviteModal(d, pendingInvite);
+          }).catch(() => {});
+        }
+      }
       if (window._pendingResetToken) { openResetModal(window._pendingResetToken); window._pendingResetToken = null; }
       if (window._showVerifiedToast) {
         window._showVerifiedToast = false;
