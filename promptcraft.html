@@ -8105,22 +8105,109 @@ Output:</div><p>The model extracts the underlying transformation rule (informal 
     async function renderTeamAnalytics() {
       const sec = document.getElementById('tsec-analytics');
       if (!authUser?.teamId) { sec.innerHTML = '<div class="teams-empty">Not on a team.</div>'; return; }
+      sec.innerHTML = '<div class="teams-empty">Loading…</div>';
       try {
         const res = await fetch('/api/teams/' + authUser.teamId + '/analytics', { headers: { 'Authorization': 'Bearer ' + getToken() } });
         if (!res.ok) { sec.innerHTML = '<div class="teams-empty">Could not load analytics.</div>'; return; }
         const data = await res.json();
+        const members = data.members || [];
+        const now = Date.now();
+
+        function daysSince(dateStr) {
+          if (!dateStr) return 999;
+          return Math.floor((now - new Date(dateStr).getTime()) / 864e5);
+        }
+
+        const totalXP = members.reduce((s, m) => s + m.xp, 0);
+        const avgLessons = members.length ? (members.reduce((s, m) => s + m.lessonsCompleted, 0) / members.length).toFixed(1) : 0;
+        const activeCount = members.filter(m => daysSince(m.lastVisit) <= 7).length;
+        const avgStreak = members.length ? Math.round(members.reduce((s, m) => s + m.streak, 0) / members.length) : 0;
+
+        const activeNow = members.filter(m => daysSince(m.lastVisit) <= 3).length;
+        const atRisk = members.filter(m => { const d = daysSince(m.lastVisit); return d > 3 && d <= 7; }).length;
+        const inactive = members.filter(m => daysSince(m.lastVisit) > 7).length;
+
+        const topCats = (data.categoryBreakdown || [])
+          .filter(c => c.avgPct > 0)
+          .sort((a, b) => b.avgPct - a.avgPct)
+          .slice(0, 8);
+
+        function lastActiveLabel(dateStr) {
+          const d = daysSince(dateStr);
+          if (d === 0) return { label: 'Today', color: 'var(--accent-text)' };
+          if (d === 1) return { label: 'Yesterday', color: 'var(--accent-text)' };
+          if (d <= 3) return { label: d + ' days ago', color: 'var(--accent-text)' };
+          if (d <= 7) return { label: d + ' days ago', color: 'var(--orange,#f59e0b)' };
+          if (d >= 999) return { label: 'Never', color: 'var(--muted)' };
+          return { label: d + ' days ago', color: 'var(--red,#ef4444)' };
+        }
+
         sec.innerHTML = `
-      <div style="margin-bottom:28px">
-        <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px">Team Completion Rate</div>
-        <div style="display:flex;align-items:center;gap:16px">
-          <div style="flex:1;height:12px;background:var(--border);border-radius:6px;overflow:hidden"><div style="height:100%;background:var(--accent-text);border-radius:6px;width:${data.completionRate}%"></div></div>
-          <span style="font-size:24px;font-weight:800;min-width:52px;text-align:right">${data.completionRate}%</span>
-        </div>
-      </div>
-      <div style="margin-bottom:20px">
-        <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:16px">Top Performers</div>
-        ${data.topPerformers.map((p, i) => `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px;font-weight:800;color:var(--muted);min-width:20px">${i + 1}</span><span style="font-weight:700;flex:1">${p.name}</span><span style="color:var(--accent-text);font-weight:800">${p.xp.toLocaleString()} XP</span></div>`).join('')}
-      </div>`;
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
+            ${[
+              ['Total XP', totalXP.toLocaleString()],
+              ['Avg Lessons', avgLessons],
+              ['Active This Week', activeCount + ' / ' + members.length],
+              ['Avg Streak', avgStreak + ' days'],
+            ].map(([label, val]) => `<div class="teams-card" style="text-align:center;padding:16px">
+              <div style="font-size:22px;font-weight:800;color:var(--text)">${val}</div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:4px">${label}</div>
+            </div>`).join('')}
+          </div>
+
+          <div class="teams-card" style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px">Engagement Health</div>
+            <div style="height:12px;border-radius:6px;overflow:hidden;display:flex;gap:2px;margin-bottom:10px">
+              ${activeNow ? `<div style="flex:${activeNow};background:var(--accent-text);border-radius:6px 0 0 6px"></div>` : ''}
+              ${atRisk ? `<div style="flex:${atRisk};background:var(--orange,#f59e0b)"></div>` : ''}
+              ${inactive ? `<div style="flex:${inactive};background:var(--red,#ef4444);border-radius:0 6px 6px 0"></div>` : ''}
+            </div>
+            <div style="display:flex;gap:20px;font-size:12px">
+              <span><span style="color:var(--accent-text);font-weight:800">${activeNow}</span> active (≤3 days)</span>
+              <span><span style="color:var(--orange,#f59e0b);font-weight:800">${atRisk}</span> at risk (4–7 days)</span>
+              <span><span style="color:var(--red,#ef4444);font-weight:800">${inactive}</span> inactive (7+ days)</span>
+            </div>
+          </div>
+
+          ${topCats.length ? `<div class="teams-card" style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:14px">Category Engagement (avg lessons/member)</div>
+            ${topCats.map(c => `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+              <span style="font-size:12px;font-weight:700;min-width:110px;color:var(--text2);text-transform:capitalize">${c.categoryId}</span>
+              <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+                <div style="height:100%;background:var(--accent-text);border-radius:4px;width:${Math.min(c.avgPct, 100)}%"></div>
+              </div>
+              <span style="font-size:12px;color:var(--muted);min-width:32px;text-align:right">${c.avgPct}%</span>
+            </div>`).join('')}
+          </div>` : ''}
+
+          <div class="teams-card">
+            <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:14px">Member Breakdown</div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead><tr style="color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">
+                  <th style="text-align:left;padding:6px 8px">Member</th>
+                  <th style="text-align:center;padding:6px 8px">XP</th>
+                  <th style="text-align:center;padding:6px 8px">Lessons</th>
+                  <th style="text-align:center;padding:6px 8px">Missions</th>
+                  <th style="text-align:center;padding:6px 8px">Streak</th>
+                  <th style="text-align:right;padding:6px 8px">Last Active</th>
+                </tr></thead>
+                <tbody>
+                  ${members.sort((a, b) => b.xp - a.xp).map(m => {
+                    const { label, color } = lastActiveLabel(m.lastVisit);
+                    return `<tr style="border-top:1px solid var(--border)">
+                      <td style="padding:9px 8px;font-weight:600">${m.name}</td>
+                      <td style="text-align:center;padding:9px 8px;color:var(--accent-text);font-weight:700">${(m.xp||0).toLocaleString()}</td>
+                      <td style="text-align:center;padding:9px 8px">${m.lessonsCompleted}</td>
+                      <td style="text-align:center;padding:9px 8px">${m.missionsPassed}</td>
+                      <td style="text-align:center;padding:9px 8px">${m.streak}d</td>
+                      <td style="text-align:right;padding:9px 8px;color:${color};font-weight:600">${label}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
       } catch (e) { sec.innerHTML = '<div class="teams-empty">Error loading analytics.</div>'; }
     }
 

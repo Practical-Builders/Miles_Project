@@ -796,7 +796,14 @@ app.get('/api/teams/:teamId/analytics', requireAuth, (req, res, next) => require
   const topPerformers = users
     .map(u => ({ id: u.id, name: u.name, xp: u.xp || 0, lessonsCompleted: (u.completedLessons||[]).length }))
     .sort((a, b) => b.xp - a.xp).slice(0, 5);
-  res.json({ completionRate: Math.round(avgCompletion * 100), categoryBreakdown, topPerformers });
+  const members = users.map(u => ({
+    id: u.id, name: u.name, xp: u.xp || 0,
+    lessonsCompleted: (u.completedLessons || []).length,
+    missionsPassed: (u.passedMissions || []).length,
+    streak: u.streak || 0,
+    lastVisit: u.lastVisit || '',
+  }));
+  res.json({ completionRate: Math.round(avgCompletion * 100), categoryBreakdown, topPerformers, members });
 });
 
 // ── Team Prompt Library ───────────────────────────────────────────────────
