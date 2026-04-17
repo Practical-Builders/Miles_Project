@@ -913,9 +913,27 @@ app.post('/api/contact', async (req, res) => {
   const { type, name, email, businessName, numAccounts, message } = req.body;
   if (!type || !name || !email) return res.status(400).json({ error: 'type, name, and email are required' });
   const id = 'con_' + randomUUID();
+  const createdAt = new Date().toISOString();
   await query(
     'INSERT INTO contact_submissions (id, type, name, email, business_name, num_accounts, message, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-    [id, type, name.trim(), email.trim().toLowerCase(), businessName?.trim() || null, numAccounts?.trim() || null, message?.trim() || null, new Date().toISOString()]
+    [id, type, name.trim(), email.trim().toLowerCase(), businessName?.trim() || null, numAccounts?.trim() || null, message?.trim() || null, createdAt]
+  );
+  const label = type === 'teams' ? 'Teams Inquiry' : 'Contact Form';
+  const extraRows = [
+    businessName ? `<tr><td style="color:#888;padding:4px 0">Business</td><td style="padding:4px 0">${businessName.trim()}</td></tr>` : '',
+    numAccounts ? `<tr><td style="color:#888;padding:4px 0">Accounts</td><td style="padding:4px 0">${numAccounts.trim()}</td></tr>` : '',
+    message ? `<tr><td style="color:#888;padding:4px 0;vertical-align:top">Message</td><td style="padding:4px 0">${message.trim().replace(/\n/g, '<br>')}</td></tr>` : '',
+  ].filter(Boolean).join('');
+  await sendEmail('admin@promptlyperfect.com', `[PromptlyPerfect] New ${label} from ${name.trim()}`,
+    `<div style="font-family:sans-serif;max-width:520px">
+      <h2 style="margin-bottom:16px">New ${label}</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <tr><td style="color:#888;padding:4px 0">Name</td><td style="padding:4px 0">${name.trim()}</td></tr>
+        <tr><td style="color:#888;padding:4px 0">Email</td><td style="padding:4px 0"><a href="mailto:${email.trim()}">${email.trim()}</a></td></tr>
+        ${extraRows}
+        <tr><td style="color:#888;padding:4px 0">Submitted</td><td style="padding:4px 0">${new Date(createdAt).toLocaleString()}</td></tr>
+      </table>
+    </div>`
   );
   res.json({ success: true });
 });
